@@ -557,15 +557,108 @@
     padding: 2px 6px; border-radius: 4px; font-family: monospace;
   }
 
-  /* 코치별 색상 팔레트 */
-  .coach-color-0 { --cc: #60a5fa; --cc-bg: rgba(96,165,250,0.15); --cc-border: rgba(96,165,250,0.5); }   /* 파랑 */
-  .coach-color-1 { --cc: #f472b6; --cc-bg: rgba(244,114,182,0.15); --cc-border: rgba(244,114,182,0.5); } /* 핑크 */
-  .coach-color-2 { --cc: #34d399; --cc-bg: rgba(52,211,153,0.15); --cc-border: rgba(52,211,153,0.5); }  /* 민트 */
-  .coach-color-3 { --cc: #fb923c; --cc-bg: rgba(251,146,60,0.15); --cc-border: rgba(251,146,60,0.5); }  /* 오렌지 */
-  .coach-color-4 { --cc: #a78bfa; --cc-bg: rgba(167,139,250,0.15); --cc-border: rgba(167,139,250,0.5); } /* 보라 */
-  .coach-color-5 { --cc: #facc15; --cc-bg: rgba(250,204,21,0.15); --cc-border: rgba(250,204,21,0.5); }  /* 노랑 */
-  .coach-color-6 { --cc: #38bdf8; --cc-bg: rgba(56,189,248,0.15); --cc-border: rgba(56,189,248,0.5); }  /* 하늘 */
-  .coach-color-7 { --cc: #f87171; --cc-bg: rgba(248,113,113,0.15); --cc-border: rgba(248,113,113,0.5); } /* 빨강 */
+  /* 다중 선택 모드 */
+  .multi-select-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px 14px;
+    margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .multi-select-btn {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-dim);
+    padding: 7px 14px; border-radius: 6px;
+    cursor: pointer; font-family: inherit;
+    font-size: 12px; font-weight: 600;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+  .multi-select-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .multi-select-btn.active {
+    background: var(--accent); color: #000;
+    border-color: var(--accent);
+  }
+  .multi-select-count {
+    font-size: 12px; color: var(--accent); font-weight: 700;
+    display: none;
+  }
+  .multi-select-count.show { display: inline; }
+  .multi-apply-btn {
+    background: var(--accent); color: #000;
+    border: none; padding: 7px 16px;
+    border-radius: 6px; cursor: pointer;
+    font-family: inherit; font-size: 12px; font-weight: 700;
+    transition: all 0.15s; display: none; flex-shrink: 0;
+  }
+  .multi-apply-btn.show { display: inline-block; }
+  .multi-apply-btn:hover { opacity: 0.85; }
+  .multi-cancel-btn {
+    background: transparent; color: var(--text-dim);
+    border: 1px solid var(--border-light);
+    padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; font-family: inherit;
+    font-size: 12px; font-weight: 600;
+    transition: all 0.15s; display: none; flex-shrink: 0;
+  }
+  .multi-cancel-btn.show { display: inline-block; }
+
+  .copy-prev-btn {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-dim);
+    padding: 7px 14px; border-radius: 6px;
+    cursor: pointer; font-family: inherit;
+    font-size: 12px; font-weight: 600;
+    transition: all 0.15s; margin-left: auto; flex-shrink: 0;
+  }
+  .copy-prev-btn:hover { border-color: #60a5fa; color: #60a5fa; }
+
+  /* 다중 선택된 슬롯 */
+  .slot.multi-selected {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    background: rgba(250,204,21,0.15) !important;
+  }
+  .slot.multi-selected::after {
+    content: '✓';
+    color: var(--accent);
+    font-size: 14px; font-weight: 900;
+  }
+  .slot.multi-selected::before { display: none; }
+
+  /* 이전 달 복사 모달 */
+  .copy-modal { max-width: 520px; }
+  .copy-preview-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 11px; margin: 12px 0;
+    max-height: 320px; overflow-y: auto; display: block;
+  }
+  .copy-preview-table th {
+    background: var(--surface-2); color: var(--text-dim);
+    padding: 6px 8px; text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    position: sticky; top: 0;
+  }
+  .copy-preview-table td {
+    padding: 5px 8px; border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .copy-preview-table td.coach-name { font-weight: 600; }
+  .copy-preview-table tr:last-child td { border-bottom: none; }
+  .copy-preview-empty {
+    text-align: center; color: var(--text-faint);
+    padding: 20px; font-size: 13px;
+  }
+  .coach-color-0 { --cc: #ef4444; --cc-bg: rgba(239,68,68,0.15); --cc-border: rgba(239,68,68,0.5); }    /* 빨 */
+  .coach-color-1 { --cc: #f97316; --cc-bg: rgba(249,115,22,0.15); --cc-border: rgba(249,115,22,0.5); }  /* 주 */
+  .coach-color-2 { --cc: #facc15; --cc-bg: rgba(250,204,21,0.15); --cc-border: rgba(250,204,21,0.5); }  /* 노 */
+  .coach-color-3 { --cc: #22c55e; --cc-bg: rgba(34,197,94,0.15); --cc-border: rgba(34,197,94,0.5); }   /* 초 */
+  .coach-color-4 { --cc: #3b82f6; --cc-bg: rgba(59,130,246,0.15); --cc-border: rgba(59,130,246,0.5); } /* 파 */
+  .coach-color-5 { --cc: #6366f1; --cc-bg: rgba(99,102,241,0.15); --cc-border: rgba(99,102,241,0.5); } /* 남 */
+  .coach-color-6 { --cc: #a855f8; --cc-bg: rgba(168,85,248,0.15); --cc-border: rgba(168,85,248,0.5); } /* 보 */
+  .coach-color-7 { --cc: #f1f5f9; --cc-bg: rgba(241,245,249,0.12); --cc-border: rgba(241,245,249,0.4); } /* 흰 */
 
   /* 코치 칩 색상 적용 */
   .coach-chip.colored { border-color: var(--cc-border); }
@@ -688,6 +781,14 @@
     <div class="coach-list" id="coachList"></div>
   </div>
 
+  <div class="multi-select-bar">
+    <button class="multi-select-btn" id="multiSelectBtn" onclick="toggleMultiSelect()">☑ 다중 선택</button>
+    <span class="multi-select-count" id="multiSelectCount">0개 선택</span>
+    <button class="multi-apply-btn" id="multiApplyBtn" onclick="openMultiAssignModal()">코치 배정</button>
+    <button class="multi-cancel-btn" id="multiCancelBtn" onclick="cancelMultiSelect()">선택 취소</button>
+    <button class="copy-prev-btn" onclick="openCopyPrevModal()">↩ 이전 달에서 복사</button>
+  </div>
+
   <div class="week-nav" id="weekNav"></div>
 
   <div class="legend" id="legend">
@@ -699,6 +800,31 @@
     <div style="padding:40px; text-align:center; color:var(--text-dim);">불러오는 중...</div>
   </div>
 
+</div>
+
+<!-- 다중 배정 모달 -->
+<div class="modal-backdrop" id="multiAssignModal">
+  <div class="modal">
+    <h3>일괄 배정</h3>
+    <div class="modal-subtitle" id="multiAssignSubtitle"></div>
+    <div class="modal-coach-grid" id="multiAssignCoachGrid"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeMultiAssignModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- 이전 달 복사 모달 -->
+<div class="modal-backdrop" id="copyPrevModal">
+  <div class="modal copy-modal">
+    <h3>이전 달에서 복사</h3>
+    <div class="modal-subtitle" id="copyPrevSubtitle"></div>
+    <div id="copyPrevContent"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeCopyPrevModal()">취소</button>
+      <button class="btn btn-primary" id="copyPrevConfirmBtn" onclick="confirmCopyPrev()">이대로 적용</button>
+    </div>
+  </div>
 </div>
 
 <!-- 슬롯 배정 모달 -->
@@ -717,8 +843,8 @@
 <!-- 코치 이름 편집 모달 -->
 <div class="modal-backdrop" id="coachModal">
   <div class="modal">
-    <h3>코치 이름 설정</h3>
-    <div class="modal-subtitle">8명 코치 이름을 입력하세요 (모든 코치 공용)</div>
+    <h3>담당자 이름 설정</h3>
+    <div class="modal-subtitle">8명 담당자 이름을 입력하세요 (모든 코치 공용)</div>
     <div id="coachEditorList"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeCoachEditor()">취소</button>
@@ -803,7 +929,7 @@ const ROLE_GROUPS = [
 ];
 
 const ROLES = ROLE_GROUPS.flatMap(g => g.roles.map(r => ({ ...r, group: g.group })));
-const DEFAULT_COACHES = ['코치1', '코치2', '코치3', '코치4', '코치5', '코치6', '코치7', '코치8'];
+const DEFAULT_COACHES = ['담당자1','담당자2','담당자3','담당자4','담당자5','담당자6','담당자7','담당자8'];
 const WEEKDAY_HEADERS = ['월', '화', '수', '목', '금', '토', '일'];
 
 /* =========================================================================
@@ -821,6 +947,9 @@ let currentEditSlot = null;
 let activeWeekIdx = 0;
 let pendingKeys = new Set();
 let isFirstLoad = true;
+let isMultiSelectMode = false;
+let multiSelectedKeys = new Set(); // "day_roleId" 형태
+let prevMonthAssignments = {}; // 이전 달 복사용
 
 const STORAGE_KEY_ME = 'kbs_my_coach_name';
 
@@ -890,7 +1019,7 @@ function updateMonthUI() {
   const label = getMonthLabel(YEAR, MONTH);
   const KR_MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   document.getElementById('pageTitle').innerHTML =
-    `${KR_MONTHS[MONTH-1].replace('월','')}月 <span class="accent">코치 스케줄</span>`;
+    `${YEAR}년 ${KR_MONTHS[MONTH-1]} <span class="accent">코치 스케줄</span>`;
   document.getElementById('monthNavTitle').textContent = label;
 
   // 이번 달 버튼 강조
@@ -1119,7 +1248,13 @@ function renderSchedule() {
             const cc = coachColorClass(val);
             html += `<td><div class="slot filled ${cc}${pendingCls}" onclick="openSlotModal(${d},'${role.id}')">${escapeHtml(val)}</div></td>`;
           } else {
-            html += `<td><div class="slot empty${pendingCls}" onclick="openSlotModal(${d},'${role.id}')"></div></td>`;
+            const isSelected = multiSelectedKeys.has(`${d}_${role.id}`);
+            const selCls = isSelected ? ' multi-selected' : '';
+            if (isMultiSelectMode) {
+              html += `<td><div class="slot empty${pendingCls}${selCls}" onclick="toggleSlotSelect(${d},'${role.id}')"></div></td>`;
+            } else {
+              html += `<td><div class="slot empty${pendingCls}" onclick="openSlotModal(${d},'${role.id}')"></div></td>`;
+            }
           }
         }
       });
@@ -1261,13 +1396,261 @@ async function clearSlot() {
 }
 
 /* =========================================================================
+   다중 선택
+   ========================================================================= */
+function toggleMultiSelect() {
+  isMultiSelectMode = !isMultiSelectMode;
+  if (!isMultiSelectMode) {
+    multiSelectedKeys.clear();
+  }
+  updateMultiSelectUI();
+  renderSchedule();
+}
+
+function toggleSlotSelect(day, roleId) {
+  const key = `${day}_${roleId}`;
+  if (multiSelectedKeys.has(key)) multiSelectedKeys.delete(key);
+  else multiSelectedKeys.add(key);
+  updateMultiSelectUI();
+  renderSchedule();
+}
+
+function updateMultiSelectUI() {
+  const btn = document.getElementById('multiSelectBtn');
+  const count = document.getElementById('multiSelectCount');
+  const applyBtn = document.getElementById('multiApplyBtn');
+  const cancelBtn = document.getElementById('multiCancelBtn');
+  const n = multiSelectedKeys.size;
+
+  btn.classList.toggle('active', isMultiSelectMode);
+  btn.textContent = isMultiSelectMode ? '☑ 선택 중' : '☑ 다중 선택';
+  count.textContent = `${n}개 선택`;
+  count.classList.toggle('show', isMultiSelectMode && n > 0);
+  applyBtn.classList.toggle('show', isMultiSelectMode && n > 0);
+  cancelBtn.classList.toggle('show', isMultiSelectMode);
+}
+
+function cancelMultiSelect() {
+  isMultiSelectMode = false;
+  multiSelectedKeys.clear();
+  updateMultiSelectUI();
+  renderSchedule();
+}
+
+function openMultiAssignModal() {
+  if (multiSelectedKeys.size === 0) return;
+  document.getElementById('multiAssignSubtitle').textContent =
+    `선택된 ${multiSelectedKeys.size}개 칸에 일괄 배정합니다.`;
+  document.getElementById('multiAssignCoachGrid').innerHTML = coaches.map(name => `
+    <button class="modal-coach-btn ${coachColorClass(name)}"
+            onclick="applyMultiAssign('${escapeAttr(name)}')">
+      ${escapeHtml(name)}
+    </button>
+  `).join('');
+  document.getElementById('multiAssignModal').classList.add('open');
+}
+
+function closeMultiAssignModal() {
+  document.getElementById('multiAssignModal').classList.remove('open');
+}
+
+async function applyMultiAssign(coachName) {
+  closeMultiAssignModal();
+  const keys = [...multiSelectedKeys];
+  const prevValues = {};
+  keys.forEach(key => {
+    prevValues[key] = assignments[key];
+    assignments[key] = coachName;
+    pendingKeys.add(key);
+  });
+  cancelMultiSelect();
+  renderAll();
+  setSyncStatus('syncing', '저장 중...');
+
+  // 순차 저장
+  let failCount = 0;
+  for (const key of keys) {
+    const underscoreIdx = key.indexOf('_');
+    const day = Number(key.substring(0, underscoreIdx));
+    const roleId = key.substring(underscoreIdx + 1);
+    try {
+      await apiPost({ action: 'assign', day, roleId, coachName });
+      pendingKeys.delete(key);
+    } catch (e) {
+      failCount++;
+      assignments[key] = prevValues[key] || '';
+      if (!assignments[key]) delete assignments[key];
+      pendingKeys.delete(key);
+    }
+  }
+  renderAll();
+  if (failCount === 0) {
+    setSyncStatus('connected', '저장됨');
+    showToast(`${coachName} ${keys.length}건 일괄 배정 완료`);
+  } else {
+    setSyncStatus('error', `${failCount}건 저장 실패`);
+    showToast(`${failCount}건 저장 실패`, true);
+  }
+}
+
+/* =========================================================================
+   이전 달 복사
+   ========================================================================= */
+async function openCopyPrevModal() {
+  const prevMonth = MONTH === 1 ? 12 : MONTH - 1;
+  const prevYear = MONTH === 1 ? YEAR - 1 : YEAR;
+  const prevMonthKey = getMonthKey(prevYear, prevMonth);
+  const prevLabel = getMonthLabel(prevYear, prevMonth);
+
+  document.getElementById('copyPrevSubtitle').textContent = `${prevLabel} 요일 패턴 → ${getMonthLabel(YEAR, MONTH)} 적용`;
+  document.getElementById('copyPrevContent').innerHTML =
+    '<div style="text-align:center;padding:20px;color:var(--text-dim)">불러오는 중...</div>';
+  document.getElementById('copyPrevModal').classList.add('open');
+
+  // 이전 달 데이터 로드
+  setSyncStatus('syncing', '불러오는 중...');
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?month=${prevMonthKey}&t=${Date.now()}`);
+    const json = await res.json();
+    prevMonthAssignments = json.data.assignments || {};
+    setSyncStatus('connected', '연결됨');
+  } catch (e) {
+    prevMonthAssignments = {};
+    setSyncStatus('error', '불러오기 실패');
+  }
+
+  // 이전 달 요일 패턴 → 현재 달 날짜에 매핑
+  const preview = buildCopyPreview(prevYear, prevMonth);
+  renderCopyPreview(preview, prevLabel);
+}
+
+function buildCopyPreview(prevYear, prevMonth) {
+  // 이전 달: 날짜 → 요일(0=월) 맵
+  const prevDayWeekday = {};
+  const prevDays = new Date(prevYear, prevMonth, 0).getDate();
+  for (let d = 1; d <= prevDays; d++) {
+    const wd = (new Date(prevYear, prevMonth - 1, d).getDay() + 6) % 7;
+    prevDayWeekday[d] = wd;
+  }
+
+  // 이전 달: 요일+역할 → 코치 (마지막 배정값 우선)
+  const weekdayRoleCoach = {}; // key: "wd_roleId"
+  Object.entries(prevMonthAssignments).forEach(([key, coachName]) => {
+    if (!coachName) return;
+    const [dayStr, ...roleParts] = key.split('_');
+    const roleId = roleParts.join('_');
+    const wd = prevDayWeekday[Number(dayStr)];
+    if (wd === undefined) return;
+    weekdayRoleCoach[`${wd}_${roleId}`] = coachName;
+  });
+
+  // 현재 달 날짜에 적용
+  const currentDays = new Date(YEAR, MONTH, 0).getDate();
+  const result = []; // { day, roleId, roleLabel, coachName }
+  for (let d = 1; d <= currentDays; d++) {
+    const wd = (new Date(YEAR, MONTH - 1, d).getDay() + 6) % 7;
+    ROLES.forEach(role => {
+      const coachName = weekdayRoleCoach[`${wd}_${role.id}`];
+      const key = `${d}_${role.id}`;
+      if (coachName && !assignments[key]) { // 이미 배정된 칸은 건너뜀
+        result.push({ day: d, roleId: role.id, roleLabel: role.label, coachName, weekday: wd });
+      }
+    });
+  }
+  return result;
+}
+
+function renderCopyPreview(preview, prevLabel) {
+  const content = document.getElementById('copyPrevContent');
+  if (preview.length === 0) {
+    content.innerHTML = `<div class="copy-preview-empty">
+      ${prevLabel}에 배정 데이터가 없거나 이미 모두 배정되어 있습니다.
+    </div>`;
+    document.getElementById('copyPrevConfirmBtn').style.display = 'none';
+    return;
+  }
+  document.getElementById('copyPrevConfirmBtn').style.display = 'inline-block';
+
+  // 미리보기 테이블
+  const WEEKDAY_KR = ['월','화','수','목','금','토','일'];
+  let html = `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">
+    총 <strong style="color:var(--accent)">${preview.length}개</strong> 칸이 채워집니다 (이미 배정된 칸 제외)
+  </div>
+  <table class="copy-preview-table">
+    <thead><tr><th>날짜</th><th>요일</th><th>역할</th><th>배정 코치</th></tr></thead>
+    <tbody>`;
+  preview.slice(0, 50).forEach(({ day, roleLabel, coachName, weekday }) => {
+    const cc = coachColorClass(coachName);
+    html += `<tr>
+      <td>${MONTH}/${day}</td>
+      <td>${WEEKDAY_KR[weekday]}</td>
+      <td>${escapeHtml(roleLabel)}</td>
+      <td class="coach-name ${cc}" style="color:var(--cc,inherit)">${escapeHtml(coachName)}</td>
+    </tr>`;
+  });
+  if (preview.length > 50) {
+    html += `<tr><td colspan="4" style="text-align:center;color:var(--text-faint)">... 외 ${preview.length - 50}개</td></tr>`;
+  }
+  html += '</tbody></table>';
+  content.innerHTML = html;
+  // 미리보기 데이터 저장
+  content._preview = preview;
+}
+
+function closeCopyPrevModal() {
+  document.getElementById('copyPrevModal').classList.remove('open');
+  prevMonthAssignments = {};
+}
+
+async function confirmCopyPrev() {
+  const content = document.getElementById('copyPrevContent');
+  const preview = content._preview;
+  if (!preview || preview.length === 0) return;
+
+  const btn = document.getElementById('copyPrevConfirmBtn');
+  btn.textContent = '적용 중...';
+  btn.disabled = true;
+
+  // 낙관적 업데이트
+  preview.forEach(({ day, roleId, coachName }) => {
+    assignments[`${day}_${roleId}`] = coachName;
+    pendingKeys.add(`${day}_${roleId}`);
+  });
+  closeCopyPrevModal();
+  renderAll();
+  setSyncStatus('syncing', '저장 중...');
+
+  let failCount = 0;
+  for (const { day, roleId, coachName } of preview) {
+    try {
+      await apiPost({ action: 'assign', day, roleId, coachName });
+      pendingKeys.delete(`${day}_${roleId}`);
+    } catch (e) {
+      failCount++;
+      delete assignments[`${day}_${roleId}`];
+      pendingKeys.delete(`${day}_${roleId}`);
+    }
+  }
+  renderAll();
+  btn.textContent = '이대로 적용';
+  btn.disabled = false;
+  if (failCount === 0) {
+    setSyncStatus('connected', '저장됨');
+    showToast(`${preview.length}건 복사 완료`);
+  } else {
+    setSyncStatus('error', `${failCount}건 실패`);
+    showToast(`${failCount}건 저장 실패`, true);
+  }
+}
+
+/* =========================================================================
    COACH EDITOR
    ========================================================================= */
 function openCoachEditor() {
   const list = document.getElementById('coachEditorList');
   list.innerHTML = coaches.map((name, i) => `
     <div class="coach-editor-row">
-      <label>코치${i+1}</label>
+      <label>담당자${i+1}</label>
       <input type="text" id="coachInput${i}" value="${escapeAttr(name)}" maxlength="10" placeholder="이름 입력">
     </div>
   `).join('');
@@ -1280,7 +1663,7 @@ async function saveCoachNames() {
   const newCoaches = [];
   for (let i = 0; i < 8; i++) {
     const input = document.getElementById(`coachInput${i}`);
-    const val = input.value.trim() || `코치${i+1}`;
+    const val = input.value.trim() || `담당자${i+1}`;
     newCoaches.push(val);
   }
   if (new Set(newCoaches).size !== 8) {
@@ -1303,7 +1686,7 @@ async function saveCoachNames() {
     renderAll();
     closeCoachEditor();
     setSyncStatus('connected', '연결됨');
-    showToast('코치 이름 저장됨');
+    showToast('담당자 이름 저장됨');
   } catch (e) {
     setSyncStatus('error', '저장 실패');
     showToast('저장 실패: ' + e.message, true);
@@ -1370,6 +1753,8 @@ function showToast(msg, isError) {
 document.getElementById('slotModal').addEventListener('click', e => { if (e.target.id === 'slotModal') closeSlotModal(); });
 document.getElementById('coachModal').addEventListener('click', e => { if (e.target.id === 'coachModal') closeCoachEditor(); });
 document.getElementById('resetModal').addEventListener('click', e => { if (e.target.id === 'resetModal') closeResetModal(); });
+document.getElementById('multiAssignModal').addEventListener('click', e => { if (e.target.id === 'multiAssignModal') closeMultiAssignModal(); });
+document.getElementById('copyPrevModal').addEventListener('click', e => { if (e.target.id === 'copyPrevModal') closeCopyPrevModal(); });
 
 /* =========================================================================
    AUTO REFRESH
