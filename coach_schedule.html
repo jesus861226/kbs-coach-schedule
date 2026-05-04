@@ -348,31 +348,39 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  table { width: 100%; border-collapse: collapse; min-width: 720px; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 
   thead.date-header th {
     background: var(--surface-2);
-    padding: 12px 6px;
+    padding: 10px 4px;
     text-align: center;
     border-bottom: 1px solid var(--border);
     border-right: 1px solid var(--border);
     font-weight: normal;
-    min-width: 78px;
+    width: calc((100% - 130px) / 7);
   }
   thead.date-header th:last-child { border-right: none; }
   thead.date-header th.role-col {
-    width: 180px; min-width: 180px;
-    text-align: left; padding-left: 16px;
+    width: 130px; min-width: 130px;
+    text-align: left; padding-left: 10px;
     color: var(--text-dim);
     font-family: 'Archivo', sans-serif;
-    font-size: 10px; text-transform: uppercase;
-    letter-spacing: 0.15em; font-weight: 800;
+    font-size: 9px; text-transform: uppercase;
+    letter-spacing: 0.1em; font-weight: 800;
+    position: sticky; left: 0; z-index: 2;
+    background: var(--surface-2);
   }
 
-  .date-weekday { font-size: 11px; color: var(--text-dim); letter-spacing: 0.1em; margin-bottom: 2px; }
+  /* 역할 열 sticky 고정 */
+  tbody .role-label {
+    position: sticky; left: 0; z-index: 1;
+  }
+  tr.group-header td { position: sticky; left: 0; }
+
+  .date-weekday { font-size: 10px; color: var(--text-dim); letter-spacing: 0.05em; margin-bottom: 1px; }
   .date-num {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px; letter-spacing: 0.02em; color: var(--text);
+    font-size: 16px; letter-spacing: 0.02em; color: var(--text);
   }
 
   thead.date-header th.weekend-sat .date-weekday,
@@ -389,16 +397,20 @@
   tbody td {
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
-    padding: 0; height: 44px;
+    padding: 0; height: 38px;
   }
   tbody td:last-child { border-right: none; }
 
   .role-label {
-    padding: 0 14px;
-    font-size: 13px; font-weight: 500;
+    padding: 0 8px;
+    font-size: 11px; font-weight: 500;
     color: var(--text-dim);
     background: var(--surface-2);
     border-right: 1px solid var(--border) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 130px;
   }
   .role-label.group-shuttle-player { border-left: 3px solid #3b82f6; }
   .role-label.group-coach-player { border-left: 3px solid #10b981; }
@@ -416,13 +428,15 @@
   }
 
   .slot {
-    width: 100%; height: 100%; min-height: 44px;
+    width: 100%; height: 100%; min-height: 38px;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     background: var(--empty-bg);
-    font-size: 13px; font-weight: 600;
+    font-size: 11px; font-weight: 600;
     transition: all 0.12s ease;
-    text-align: center; padding: 4px;
+    text-align: center; padding: 2px;
+    overflow: hidden;
+    word-break: keep-all;
   }
   .slot:hover { background: var(--empty-hover); }
   .slot.filled { background: var(--filled-bg); color: var(--filled); }
@@ -535,17 +549,80 @@
     padding: 2px 6px; border-radius: 4px; font-family: monospace;
   }
 
+  /* 코치별 색상 팔레트 */
+  .coach-color-0 { --cc: #60a5fa; --cc-bg: rgba(96,165,250,0.15); --cc-border: rgba(96,165,250,0.5); }   /* 파랑 */
+  .coach-color-1 { --cc: #f472b6; --cc-bg: rgba(244,114,182,0.15); --cc-border: rgba(244,114,182,0.5); } /* 핑크 */
+  .coach-color-2 { --cc: #34d399; --cc-bg: rgba(52,211,153,0.15); --cc-border: rgba(52,211,153,0.5); }  /* 민트 */
+  .coach-color-3 { --cc: #fb923c; --cc-bg: rgba(251,146,60,0.15); --cc-border: rgba(251,146,60,0.5); }  /* 오렌지 */
+  .coach-color-4 { --cc: #a78bfa; --cc-bg: rgba(167,139,250,0.15); --cc-border: rgba(167,139,250,0.5); } /* 보라 */
+  .coach-color-5 { --cc: #facc15; --cc-bg: rgba(250,204,21,0.15); --cc-border: rgba(250,204,21,0.5); }  /* 노랑 */
+  .coach-color-6 { --cc: #38bdf8; --cc-bg: rgba(56,189,248,0.15); --cc-border: rgba(56,189,248,0.5); }  /* 하늘 */
+  .coach-color-7 { --cc: #f87171; --cc-bg: rgba(248,113,113,0.15); --cc-border: rgba(248,113,113,0.5); } /* 빨강 */
+
+  /* 코치 칩 색상 적용 */
+  .coach-chip.colored { border-color: var(--cc-border); }
+  .coach-chip.colored:hover { border-color: var(--cc); }
+  .coach-chip.colored .coach-name-text { color: var(--cc); }
+  .coach-chip.colored.active {
+    background: var(--cc-bg);
+    border-color: var(--cc);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cc) 25%, transparent);
+    color: var(--cc);
+  }
+  .coach-chip.colored.active .count { color: var(--cc); opacity: 0.8; }
+
+  /* 슬롯 코치 색상 */
+  .slot.colored {
+    background: var(--cc-bg);
+    color: var(--cc);
+    border-left: 3px solid var(--cc);
+  }
+  .slot.colored:hover { filter: brightness(1.15); }
+
+  /* 모달 코치 버튼 색상 */
+  .modal-coach-btn.colored { border-color: var(--cc-border); color: var(--cc); }
+  .modal-coach-btn.colored:hover { background: var(--cc-bg); border-color: var(--cc); }
+  .modal-coach-btn.colored.current { background: var(--cc-bg); border-color: var(--cc); }
+
+  /* 범례 색상 도트 */
+  .legend-coach-dot {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    background: var(--cc);
+    flex-shrink: 0;
+  }
+
   @media (max-width: 768px) {
-    body { padding: 12px 8px 60px; }
+    body { padding: 10px 6px 60px; }
     header { flex-direction: column; align-items: flex-start; }
     .stats { width: 100%; justify-content: space-around; gap: 12px; }
-    .coach-list { grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); }
-    .role-label { font-size: 11.5px; padding: 0 10px; }
-    thead.date-header th.role-col { width: 130px; min-width: 130px; }
-    thead.date-header th { min-width: 70px; }
-    .date-num { font-size: 18px; }
-    .week-tab { min-width: 90px; padding: 8px 10px; }
+    .coach-list { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); }
+    .week-tab { min-width: 80px; padding: 7px 8px; }
+    .week-tab .tab-label { font-size: 13px; }
     .month-nav { padding: 6px 10px; }
+
+    /* 표: sticky 역할 열 + 날짜 칸 최소화 */
+    thead.date-header th.role-col {
+      width: 90px; min-width: 90px;
+      font-size: 8px; padding-left: 6px;
+    }
+    thead.date-header th {
+      padding: 6px 2px;
+      width: calc((100% - 90px) / 7);
+    }
+    .date-weekday { font-size: 9px; }
+    .date-num { font-size: 13px; }
+
+    .role-label {
+      font-size: 10px; padding: 0 4px;
+      max-width: 90px;
+    }
+    tbody td { height: 34px; }
+    .slot { min-height: 34px; font-size: 10px; padding: 1px; }
+    .slot.empty::before { font-size: 9px; content: '—'; }
+
+    tr.group-header td { font-size: 9px; padding: 4px 8px; }
+    tr.group-divider td { height: 5px; }
   }
 </style>
 </head>
@@ -569,7 +646,7 @@
         <div class="stat-value filled-stat" id="statFilled">—</div>
       </div>
       <div class="stat">
-        <div class="stat-label">전체 공석</div>
+        <div class="stat-label">미배정</div>
         <div class="stat-value empty-stat" id="statEmpty">—</div>
       </div>
     </div>
@@ -606,9 +683,8 @@
 
   <div class="week-nav" id="weekNav"></div>
 
-  <div class="legend">
+  <div class="legend" id="legend">
     <span class="legend-item"><span class="legend-dot empty"></span>비어있음</span>
-    <span class="legend-item"><span class="legend-dot filled"></span>배정됨</span>
     <span class="legend-item" style="margin-left:auto; color:var(--text-faint); font-size:11px;">배정된 칸을 다시 탭하면 수정/삭제</span>
   </div>
 
@@ -664,7 +740,7 @@
 /* =========================================================================
    ⚙️ 설정: Apps Script 웹앱 URL을 여기에 붙여넣으세요
    ========================================================================= */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx865WLvXsm4xWXTHPv2uB27uOaw7S7ni8kGBkrTxPeN8KhV9g5KZy9HCoZ5Jr3y6GH/exec';
+const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
 
 /* =========================================================================
    DATA
@@ -674,47 +750,47 @@ const ROLE_GROUPS = [
     name: '선수반 셔틀 (등원)',
     group: 'shuttle-player',
     roles: [
-      { id: 'shuttle_pangyo_player_in', label: '판교 선수 셔틀 등원' },
-      { id: 'shuttle_jeongja_player_in', label: '정자 선수 셔틀 등원' },
-      { id: 'shuttle_yatap1_player_in', label: '야탑1 선수 셔틀 등원' },
-      { id: 'shuttle_yatap2_player_in', label: '야탑2 선수 셔틀 등원' },
+      { id: 'shuttle_pangyo_player_in', label: '판교 선수 셔틀 등원', short: '판교등원' },
+      { id: 'shuttle_jeongja_player_in', label: '정자 선수 셔틀 등원', short: '정자등원' },
+      { id: 'shuttle_yatap1_player_in', label: '야탑1 선수 셔틀 등원', short: '야탑1등원' },
+      { id: 'shuttle_yatap2_player_in', label: '야탑2 선수 셔틀 등원', short: '야탑2등원' },
     ]
   },
   {
     name: '선수반 코치',
     group: 'coach-player',
     roles: [
-      { id: 'yukseong_coach_1', label: '육성반 코치1' },
-      { id: 'yukseong_coach_2', label: '육성반 코치2' },
-      { id: 'seonsu_coach_1', label: '선수반 코치1' },
-      { id: 'seonsu_coach_2', label: '선수반 코치2' },
-      { id: 'seonsu_coach_3', label: '선수반 코치3' },
+      { id: 'yukseong_coach_1', label: '육성반 코치1', short: '육성1' },
+      { id: 'yukseong_coach_2', label: '육성반 코치2', short: '육성2' },
+      { id: 'seonsu_coach_1', label: '선수반 코치1', short: '선수1' },
+      { id: 'seonsu_coach_2', label: '선수반 코치2', short: '선수2' },
+      { id: 'seonsu_coach_3', label: '선수반 코치3', short: '선수3' },
     ]
   },
   {
     name: '취미반 셔틀 (등원)',
     group: 'shuttle-hobby',
     roles: [
-      { id: 'shuttle_pangyo_hobby_in', label: '판교 취미 셔틀 등원' },
-      { id: 'shuttle_jeongja_hobby_in', label: '정자 취미 셔틀 등원' },
-      { id: 'shuttle_yatap_hobby_in', label: '야탑 취미 셔틀 등원' },
+      { id: 'shuttle_pangyo_hobby_in', label: '판교 취미 셔틀 등원', short: '판교취미↑' },
+      { id: 'shuttle_jeongja_hobby_in', label: '정자 취미 셔틀 등원', short: '정자취미↑' },
+      { id: 'shuttle_yatap_hobby_in', label: '야탑 취미 셔틀 등원', short: '야탑취미↑' },
     ]
   },
   {
     name: '취미반 코치',
     group: 'coach-hobby',
     roles: [
-      { id: 'chwimi_coach_1', label: '취미반 코치1' },
-      { id: 'chwimi_coach_2', label: '취미반 코치2' },
+      { id: 'chwimi_coach_1', label: '취미반 코치1', short: '취미1' },
+      { id: 'chwimi_coach_2', label: '취미반 코치2', short: '취미2' },
     ]
   },
   {
     name: '취미반 셔틀 (하원)',
     group: 'shuttle-return',
     roles: [
-      { id: 'shuttle_pangyo_hobby_out', label: '판교 취미 셔틀 하원' },
-      { id: 'shuttle_jeongja_hobby_out', label: '정자 취미 셔틀 하원' },
-      { id: 'shuttle_yatap_hobby_out', label: '야탑 취미 셔틀 하원' },
+      { id: 'shuttle_pangyo_hobby_out', label: '판교 취미 셔틀 하원', short: '판교취미↓' },
+      { id: 'shuttle_jeongja_hobby_out', label: '정자 취미 셔틀 하원', short: '정자취미↓' },
+      { id: 'shuttle_yatap_hobby_out', label: '야탑 취미 셔틀 하원', short: '야탑취미↓' },
     ]
   },
 ];
@@ -926,6 +1002,16 @@ function detectCurrentWeek() {
   return 0;
 }
 
+// 코치 이름 → 색상 인덱스 (0~7)
+function getCoachColorIdx(name) {
+  const idx = coaches.indexOf(name);
+  return idx >= 0 ? idx % 8 : -1;
+}
+function coachColorClass(name) {
+  const idx = getCoachColorIdx(name);
+  return idx >= 0 ? `colored coach-color-${idx}` : '';
+}
+
 function showConfigWarning() {
   document.getElementById('configWarning').innerHTML = `
     <div class="config-warning">
@@ -944,10 +1030,10 @@ function renderCoachList() {
   const counts = {};
   coaches.forEach(c => counts[c] = 0);
   Object.values(assignments).forEach(name => { if (counts[name] !== undefined) counts[name]++; });
-  list.innerHTML = coaches.map(name => `
-    <div class="coach-chip ${selectedCoach === name ? 'active' : ''}"
+  list.innerHTML = coaches.map((name, idx) => `
+    <div class="coach-chip ${coachColorClass(name)} ${selectedCoach === name ? 'active' : ''}"
          onclick="selectCoach('${escapeAttr(name)}')">
-      ${escapeHtml(name)}
+      <span class="coach-name-text">${escapeHtml(name)}</span>
       <span class="count">${counts[name] || 0}건</span>
     </div>
   `).join('');
@@ -967,7 +1053,7 @@ function renderWeekTabs() {
         <span class="tab-meta">
           <span>${range}</span>
           <span>·</span>
-          <span class="tab-empty-count">${noEmpty ? '✓ 완료' : `공석 ${emptyCount}`}</span>
+          <span class="tab-empty-count">${noEmpty ? '✓ 완료' : `미배정 ${emptyCount}`}</span>
         </span>
       </button>
     `;
@@ -987,7 +1073,7 @@ function renderSchedule() {
         <div class="week-info-sub">${getWeekRange(activeWeekIdx)}</div>
       </div>
       <div class="week-empty-badge ${emptyCount === 0 ? 'zero' : ''}">
-        ${emptyCount === 0 ? '✓ 모든 자리 배정 완료' : `공석 ${emptyCount}자리`}
+        ${emptyCount === 0 ? '✓ 모든 자리 배정 완료' : `미배정 ${emptyCount}`}
       </div>
     </div>
   `;
@@ -1014,7 +1100,7 @@ function renderSchedule() {
     html += `<tr class="group-header"><td colspan="8">${groupObj.name}</td></tr>`;
     groupObj.roles.forEach(role => {
       html += '<tr>';
-      html += `<td class="role-label group-${groupObj.group}">${role.label}</td>`;
+      html += `<td class="role-label group-${groupObj.group}" title="${role.label}">${window.innerWidth <= 768 && role.short ? escapeHtml(role.short) : escapeHtml(role.label)}</td>`;
       week.forEach(d => {
         if (d === null) {
           html += '<td><div class="slot disabled"></div></td>';
@@ -1024,7 +1110,8 @@ function renderSchedule() {
           const isPending = pendingKeys.has(key);
           const pendingCls = isPending ? ' pending' : '';
           if (val) {
-            html += `<td><div class="slot filled${pendingCls}" onclick="openSlotModal(${d},'${role.id}')">${escapeHtml(val)}</div></td>`;
+            const cc = coachColorClass(val);
+            html += `<td><div class="slot filled ${cc}${pendingCls}" onclick="openSlotModal(${d},'${role.id}')">${escapeHtml(val)}</div></td>`;
           } else {
             html += `<td><div class="slot empty${pendingCls}" onclick="openSlotModal(${d},'${role.id}')"></div></td>`;
           }
@@ -1051,6 +1138,22 @@ function renderAll() {
   renderWeekTabs();
   renderSchedule();
   checkNewMonthBanner();
+  renderLegend();
+}
+
+function renderLegend() {
+  const legend = document.getElementById('legend');
+  const coachDots = coaches.map((name, idx) =>
+    `<span class="legend-item coach-color-${idx % 8} colored">
+      <span class="legend-coach-dot"></span>
+      <span style="color:var(--cc); font-size:12px;">${escapeHtml(name)}</span>
+    </span>`
+  ).join('');
+  legend.innerHTML = `
+    <span class="legend-item"><span class="legend-dot empty"></span>비어있음</span>
+    ${coachDots}
+    <span class="legend-item" style="margin-left:auto; color:var(--text-faint); font-size:11px;">배정된 칸을 다시 탭하면 수정/삭제</span>
+  `;
 }
 
 /* =========================================================================
@@ -1084,7 +1187,7 @@ function openSlotModal(day, roleId) {
 
   const grid = document.getElementById('modalCoachGrid');
   grid.innerHTML = coaches.map(name => `
-    <button class="modal-coach-btn ${currentValue === name ? 'current' : ''}"
+    <button class="modal-coach-btn ${coachColorClass(name)} ${currentValue === name ? 'current' : ''}"
             onclick="assignSlot('${escapeAttr(name)}')">
       ${escapeHtml(name)}${currentValue === name ? ' ✓' : ''}
     </button>
