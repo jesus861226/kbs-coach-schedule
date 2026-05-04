@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>코치 스케줄 - 김광림야구학교</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface-2: #1c1c1c;
+    --surface-3: #232323;
+    --border: #2a2a2a;
+    --border-light: #333;
+    --text: #f5f5f5;
+    --text-dim: #888;
+    --text-faint: #555;
+    --empty: #ef4444;
+    --empty-bg: rgba(239, 68, 68, 0.1);
+    --empty-hover: rgba(239, 68, 68, 0.2);
+    --filled: #10b981;
+    --filled-bg: rgba(16, 185, 129, 0.14);
+    --accent: #facc15;
+    --shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px 16px 60px;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    background-image: 
+      radial-gradient(circle at 10% 0%, rgba(250, 204, 21, 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 90% 100%, rgba(239, 68, 68, 0.04) 0%, transparent 40%);
+  }
+
+  .container { max-width: 1300px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border);
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .title-block h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(32px, 5vw, 52px);
+    letter-spacing: 0.02em;
+    line-height: 0.95;
+  }
+  .title-block h1 .accent { color: var(--accent); }
+  .title-block .subtitle {
+    font-size: 11px; color: var(--text-dim);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    margin-top: 6px; font-weight: 500;
+  }
+
+  .stats { display: flex; gap: 24px; align-items: center; }
+  .stat { text-align: right; }
+  .stat-label {
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.15em; color: var(--text-faint);
+    font-weight: 600; margin-bottom: 2px;
+  }
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px; letter-spacing: 0.02em;
+  }
+  .stat-value.empty-stat { color: var(--empty); }
+  .stat-value.filled-stat { color: var(--filled); }
+
+  .sync-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-left: 8px;
+  }
+  .sync-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-faint);
+    transition: all 0.2s;
+  }
+  .sync-dot.connected { background: var(--filled); box-shadow: 0 0 8px var(--filled); }
+  .sync-dot.syncing { background: var(--accent); animation: pulse 1s infinite; }
+  .sync-dot.error { background: var(--empty); }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* 월 이동 네비게이션 */
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    margin-bottom: 16px;
+  }
+  .month-nav-btn {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-dim);
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .month-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .month-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .month-nav-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 0.06em;
+    color: var(--text);
+    flex: 1; text-align: center;
+  }
+  .month-nav-today {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-dim);
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px; font-weight: 600;
+    font-family: inherit;
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .month-nav-today:hover { border-color: var(--accent); color: var(--accent); }
+  .month-nav-today.is-current { border-color: var(--accent); color: var(--accent); }
+
+  /* 월 초기화 버튼 (관리용) */
+  .month-reset-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(250, 204, 21, 0.06);
+    border: 1px solid rgba(250, 204, 21, 0.25);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .month-reset-bar.show { display: flex; }
+  .month-reset-bar .reset-info { color: var(--text-dim); }
+  .month-reset-bar .reset-info strong { color: var(--accent); }
+  .reset-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .reset-btn:hover { opacity: 0.85; }
+
+  .coach-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap; gap: 12px;
+  }
+
+  .panel-title {
+    font-family: 'Archivo', sans-serif;
+    font-size: 12px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.15em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .panel-title::before {
+    content: ''; width: 4px; height: 16px;
+    background: var(--accent); display: inline-block;
+  }
+
+  .panel-hint { font-size: 11px; color: var(--text-dim); }
+
+  .coach-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+    gap: 6px;
+  }
+
+  .coach-chip {
+    background: var(--surface-2);
+    border: 2px solid var(--border-light);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13px;
+    user-select: none;
+  }
+  .coach-chip:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .coach-chip.active {
+    background: var(--accent); color: #000;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.25);
+  }
+  .coach-chip .count {
+    display: block; font-size: 10px;
+    opacity: 0.65; margin-top: 2px; font-weight: 500;
+  }
+  .coach-chip.active .count { opacity: 0.8; }
+
+  .edit-coach-btn {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .edit-coach-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .week-nav {
+    display: flex; gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .week-tab {
+    flex: 1; min-width: 100px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    padding: 10px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px; font-weight: 600;
+    transition: all 0.15s;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 2px;
+    white-space: nowrap;
+  }
+  .week-tab:hover { color: var(--text); }
+  .week-tab.active {
+    background: var(--surface-3);
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px var(--border-light);
+  }
+  .week-tab .tab-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px; letter-spacing: 0.05em;
+  }
+  .week-tab .tab-meta {
+    font-size: 10px; opacity: 0.7;
+    display: flex; gap: 6px; align-items: center;
+  }
+  .week-tab .tab-empty-count { color: var(--empty); font-weight: 700; }
+  .week-tab.no-empty .tab-empty-count { color: var(--filled); }
+
+  .legend {
+    display: flex; gap: 16px;
+    flex-wrap: wrap; margin-bottom: 14px;
+    font-size: 12px; color: var(--text-dim);
+    align-items: center;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+  .legend-dot.empty { background: var(--empty-bg); border: 1px solid var(--empty); }
+  .legend-dot.filled { background: var(--filled-bg); border: 1px solid var(--filled); }
+
+  .schedule-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .week-info-bar {
+    padding: 12px 18px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 8px;
+  }
+  .week-info-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 0.05em;
+  }
+  .week-info-sub { font-size: 12px; color: var(--text-dim); }
+
+  .week-empty-badge {
+    background: var(--empty-bg);
+    color: var(--empty);
+    border: 1px solid var(--empty);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px; font-weight: 700;
+  }
+  .week-empty-badge.zero {
+    background: var(--filled-bg);
+    color: var(--filled);
+    border-color: var(--filled);
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table { width: 100%; border-collapse: collapse; min-width: 720px; }
+
+  thead.date-header th {
+    background: var(--surface-2);
+    padding: 12px 6px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    font-weight: normal;
+    min-width: 78px;
+  }
+  thead.date-header th:last-child { border-right: none; }
+  thead.date-header th.role-col {
+    width: 180px; min-width: 180px;
+    text-align: left; padding-left: 16px;
+    color: var(--text-dim);
+    font-family: 'Archivo', sans-serif;
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.15em; font-weight: 800;
+  }
+
+  .date-weekday { font-size: 11px; color: var(--text-dim); letter-spacing: 0.1em; margin-bottom: 2px; }
+  .date-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 0.02em; color: var(--text);
+  }
+
+  thead.date-header th.weekend-sat .date-weekday,
+  thead.date-header th.weekend-sat .date-num { color: #60a5fa; }
+  thead.date-header th.weekend-sun .date-weekday,
+  thead.date-header th.weekend-sun .date-num { color: #f87171; }
+  thead.date-header th.today { background: var(--accent); }
+  thead.date-header th.today .date-weekday,
+  thead.date-header th.today .date-num { color: #000; }
+  thead.date-header th.disabled { background: #080808; }
+  thead.date-header th.disabled .date-num,
+  thead.date-header th.disabled .date-weekday { color: #333; }
+
+  tbody td {
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 0; height: 44px;
+  }
+  tbody td:last-child { border-right: none; }
+
+  .role-label {
+    padding: 0 14px;
+    font-size: 13px; font-weight: 500;
+    color: var(--text-dim);
+    background: var(--surface-2);
+    border-right: 1px solid var(--border) !important;
+  }
+  .role-label.group-shuttle-player { border-left: 3px solid #3b82f6; }
+  .role-label.group-coach-player { border-left: 3px solid #10b981; }
+  .role-label.group-shuttle-hobby { border-left: 3px solid #8b5cf6; }
+  .role-label.group-coach-hobby { border-left: 3px solid #f59e0b; }
+  .role-label.group-shuttle-return { border-left: 3px solid #ec4899; }
+
+  tr.group-divider td { background: #0c0c0c; border: none; height: 8px; padding: 0; }
+  tr.group-header td {
+    background: #0f0f0f; color: var(--text-faint);
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.15em; font-weight: 700;
+    padding: 6px 16px; height: auto;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .slot {
+    width: 100%; height: 100%; min-height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    background: var(--empty-bg);
+    font-size: 13px; font-weight: 600;
+    transition: all 0.12s ease;
+    text-align: center; padding: 4px;
+  }
+  .slot:hover { background: var(--empty-hover); }
+  .slot.filled { background: var(--filled-bg); color: var(--filled); }
+  .slot.filled:hover { background: rgba(16, 185, 129, 0.25); }
+  .slot.empty::before {
+    content: '비어있음'; color: var(--empty); font-weight: 700;
+    font-size: 11px; opacity: 0.85;
+  }
+  .slot.empty:hover::before { opacity: 1; }
+  .slot.disabled { background: #080808; cursor: not-allowed; }
+  .slot.disabled::before { content: ''; }
+  .slot.pending { opacity: 0.5; pointer-events: none; }
+
+  /* 모달 */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px; padding: 24px;
+    max-width: 420px; width: 100%;
+    box-shadow: var(--shadow);
+  }
+  .modal h3 {
+    font-family: 'Archivo', sans-serif;
+    font-size: 14px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .modal .modal-subtitle {
+    font-size: 13px; color: var(--text-dim);
+    margin-bottom: 18px; line-height: 1.5;
+  }
+  .modal-coach-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 8px; margin-bottom: 12px;
+  }
+  .modal-coach-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border-light);
+    color: var(--text); padding: 12px;
+    border-radius: 8px; cursor: pointer;
+    font-family: inherit; font-size: 14px; font-weight: 500;
+    transition: all 0.12s;
+  }
+  .modal-coach-btn:hover { border-color: var(--accent); background: var(--surface); }
+  .modal-coach-btn.current { background: var(--filled-bg); border-color: var(--filled); color: var(--filled); }
+
+  .modal-actions {
+    display: flex; gap: 8px;
+    justify-content: flex-end; margin-top: 12px;
+    padding-top: 16px; border-top: 1px solid var(--border);
+  }
+  .btn {
+    padding: 10px 16px; border-radius: 6px;
+    border: none; cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    transition: all 0.12s;
+  }
+  .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border-light); }
+  .btn-ghost:hover { color: var(--text); }
+  .btn-danger { background: var(--empty-bg); color: var(--empty); border: 1px solid var(--empty); }
+  .btn-danger:hover { background: var(--empty); color: #fff; }
+  .btn-primary { background: var(--accent); color: #000; }
+
+  .coach-editor-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .coach-editor-row label { width: 44px; font-size: 12px; color: var(--text-dim); font-weight: 600; }
+  .coach-editor-row input {
+    flex: 1; background: var(--surface-2);
+    border: 1px solid var(--border-light);
+    color: var(--text); padding: 8px 10px;
+    border-radius: 6px; font-family: inherit; font-size: 13px;
+  }
+  .coach-editor-row input:focus { outline: none; border-color: var(--accent); }
+
+  /* 월 초기화 확인 모달 */
+  .reset-confirm-modal { max-width: 360px; }
+  .reset-confirm-modal .warn-icon { font-size: 32px; margin-bottom: 12px; }
+  .reset-confirm-modal p { font-size: 13px; color: var(--text-dim); line-height: 1.6; margin-bottom: 8px; }
+  .reset-confirm-modal strong { color: var(--accent); }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--surface); color: var(--text);
+    padding: 12px 20px; border-radius: 8px;
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow);
+    font-size: 13px; font-weight: 500;
+    transition: transform 0.3s ease; z-index: 200;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { border-color: var(--empty); color: var(--empty); }
+
+  .config-warning {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--empty);
+    color: var(--empty); padding: 16px;
+    border-radius: 10px; margin-bottom: 16px;
+    font-size: 13px; line-height: 1.6;
+  }
+  .config-warning code {
+    background: rgba(0,0,0,0.4);
+    padding: 2px 6px; border-radius: 4px; font-family: monospace;
+  }
+
+  @media (max-width: 768px) {
+    body { padding: 12px 8px 60px; }
+    header { flex-direction: column; align-items: flex-start; }
+    .stats { width: 100%; justify-content: space-around; gap: 12px; }
+    .coach-list { grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); }
+    .role-label { font-size: 11.5px; padding: 0 10px; }
+    thead.date-header th.role-col { width: 130px; min-width: 130px; }
+    thead.date-header th { min-width: 70px; }
+    .date-num { font-size: 18px; }
+    .week-tab { min-width: 90px; padding: 8px 10px; }
+    .month-nav { padding: 6px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="title-block">
+      <h1 id="pageTitle">— <span class="accent">코치 스케줄</span></h1>
+      <div class="subtitle">
+        KIMKWANGRIM BASEBALL SCHOOL
+        <span class="sync-status">
+          <span class="sync-dot" id="syncDot"></span>
+          <span id="syncText">대기 중</span>
+        </span>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">배정</div>
+        <div class="stat-value filled-stat" id="statFilled">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">전체 공석</div>
+        <div class="stat-value empty-stat" id="statEmpty">—</div>
+      </div>
+    </div>
+  </header>
+
+  <div id="configWarning"></div>
+
+  <!-- 월 네비게이션 -->
+  <div class="month-nav">
+    <button class="month-nav-btn" id="prevMonthBtn" onclick="changeMonth(-1)">&#8249;</button>
+    <div class="month-nav-title" id="monthNavTitle">—</div>
+    <button class="month-nav-btn" id="nextMonthBtn" onclick="changeMonth(1)">&#8250;</button>
+    <button class="month-nav-today" id="todayBtn" onclick="goToCurrentMonth()">이번 달</button>
+  </div>
+
+  <!-- 신규 달 배정 초기화 안내 (새 달 감지 시 표시) -->
+  <div class="month-reset-bar" id="monthResetBar">
+    <div class="reset-info">
+      <strong id="resetBarMonth">—</strong> 새 달이 시작됐습니다. 배정표를 초기화하시겠습니까?
+    </div>
+    <button class="reset-btn" onclick="openResetConfirm()">이번 달 새로 시작하기</button>
+  </div>
+
+  <div class="coach-panel">
+    <div class="panel-header">
+      <div class="panel-title">1. 본인 선택</div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span class="panel-hint">이름 선택 → 빈 칸 탭</span>
+        <button class="edit-coach-btn" onclick="openCoachEditor()">이름 수정</button>
+      </div>
+    </div>
+    <div class="coach-list" id="coachList"></div>
+  </div>
+
+  <div class="week-nav" id="weekNav"></div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot empty"></span>비어있음</span>
+    <span class="legend-item"><span class="legend-dot filled"></span>배정됨</span>
+    <span class="legend-item" style="margin-left:auto; color:var(--text-faint); font-size:11px;">배정된 칸을 다시 탭하면 수정/삭제</span>
+  </div>
+
+  <div class="schedule-wrapper" id="scheduleWrapper">
+    <div style="padding:40px; text-align:center; color:var(--text-dim);">불러오는 중...</div>
+  </div>
+
+</div>
+
+<!-- 슬롯 배정 모달 -->
+<div class="modal-backdrop" id="slotModal">
+  <div class="modal">
+    <h3 id="modalTitle">배정</h3>
+    <div class="modal-subtitle" id="modalSubtitle"></div>
+    <div class="modal-coach-grid" id="modalCoachGrid"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeSlotModal()">취소</button>
+      <button class="btn btn-danger" id="modalClearBtn" onclick="clearSlot()" style="display:none;">비우기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 코치 이름 편집 모달 -->
+<div class="modal-backdrop" id="coachModal">
+  <div class="modal">
+    <h3>코치 이름 설정</h3>
+    <div class="modal-subtitle">8명 코치 이름을 입력하세요 (모든 코치 공용)</div>
+    <div id="coachEditorList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeCoachEditor()">취소</button>
+      <button class="btn btn-primary" id="saveCoachesBtn" onclick="saveCoachNames()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 월 초기화 확인 모달 -->
+<div class="modal-backdrop" id="resetModal">
+  <div class="modal reset-confirm-modal">
+    <div class="warn-icon">⚠️</div>
+    <h3>배정 초기화</h3>
+    <p><strong id="resetModalMonth">—</strong>의 모든 배정 데이터를 초기화합니다.</p>
+    <p>이전 달(<span id="resetModalPrevMonth">—</span>)의 데이터는 그대로 보존됩니다.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeResetModal()">취소</button>
+      <button class="btn btn-danger" id="resetConfirmBtn" onclick="confirmReset()">초기화 실행</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================================
+   ⚙️ 설정: Apps Script 웹앱 URL을 여기에 붙여넣으세요
+   ========================================================================= */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx865WLvXsm4xWXTHPv2uB27uOaw7S7ni8kGBkrTxPeN8KhV9g5KZy9HCoZ5Jr3y6GH/exec';
+
+/* =========================================================================
+   DATA
+   ========================================================================= */
+const ROLE_GROUPS = [
+  {
+    name: '선수반 셔틀 (등원)',
+    group: 'shuttle-player',
+    roles: [
+      { id: 'shuttle_pangyo_player_in', label: '판교 선수 셔틀 등원' },
+      { id: 'shuttle_jeongja_player_in', label: '정자 선수 셔틀 등원' },
+      { id: 'shuttle_yatap1_player_in', label: '야탑1 선수 셔틀 등원' },
+      { id: 'shuttle_yatap2_player_in', label: '야탑2 선수 셔틀 등원' },
+    ]
+  },
+  {
+    name: '선수반 코치',
+    group: 'coach-player',
+    roles: [
+      { id: 'yukseong_coach_1', label: '육성반 코치1' },
+      { id: 'yukseong_coach_2', label: '육성반 코치2' },
+      { id: 'seonsu_coach_1', label: '선수반 코치1' },
+      { id: 'seonsu_coach_2', label: '선수반 코치2' },
+      { id: 'seonsu_coach_3', label: '선수반 코치3' },
+    ]
+  },
+  {
+    name: '취미반 셔틀 (등원)',
+    group: 'shuttle-hobby',
+    roles: [
+      { id: 'shuttle_pangyo_hobby_in', label: '판교 취미 셔틀 등원' },
+      { id: 'shuttle_jeongja_hobby_in', label: '정자 취미 셔틀 등원' },
+      { id: 'shuttle_yatap_hobby_in', label: '야탑 취미 셔틀 등원' },
+    ]
+  },
+  {
+    name: '취미반 코치',
+    group: 'coach-hobby',
+    roles: [
+      { id: 'chwimi_coach_1', label: '취미반 코치1' },
+      { id: 'chwimi_coach_2', label: '취미반 코치2' },
+    ]
+  },
+  {
+    name: '취미반 셔틀 (하원)',
+    group: 'shuttle-return',
+    roles: [
+      { id: 'shuttle_pangyo_hobby_out', label: '판교 취미 셔틀 하원' },
+      { id: 'shuttle_jeongja_hobby_out', label: '정자 취미 셔틀 하원' },
+      { id: 'shuttle_yatap_hobby_out', label: '야탑 취미 셔틀 하원' },
+    ]
+  },
+];
+
+const ROLES = ROLE_GROUPS.flatMap(g => g.roles.map(r => ({ ...r, group: g.group })));
+const DEFAULT_COACHES = ['코치1', '코치2', '코치3', '코치4', '코치5', '코치6', '코치7', '코치8'];
+const WEEKDAY_HEADERS = ['월', '화', '수', '목', '금', '토', '일'];
+
+/* =========================================================================
+   STATE — 현재 날짜 기반으로 초기화
+   ========================================================================= */
+const _today = new Date();
+let YEAR = _today.getFullYear();
+let MONTH = _today.getMonth() + 1; // 1~12
+
+let WEEKS = [];
+let selectedCoach = null;
+let coaches = [...DEFAULT_COACHES];
+let assignments = {};
+let currentEditSlot = null;
+let activeWeekIdx = 0;
+let pendingKeys = new Set();
+let isFirstLoad = true;
+
+const STORAGE_KEY_ME = 'kbs_my_coach_name';
+
+/* =========================================================================
+   MONTH / WEEK HELPERS
+   ========================================================================= */
+function buildWeeks(year, month) {
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay = new Date(year, month, 0);
+  const totalDays = lastDay.getDate();
+  const firstWeekday = (firstDay.getDay() + 6) % 7; // 0=월요일
+
+  const weeks = [];
+  let current = [];
+  for (let i = 0; i < firstWeekday; i++) current.push(null);
+  for (let d = 1; d <= totalDays; d++) {
+    current.push(d);
+    if (current.length === 7) { weeks.push(current); current = []; }
+  }
+  if (current.length > 0) {
+    while (current.length < 7) current.push(null);
+    weeks.push(current);
+  }
+  return weeks;
+}
+
+function getMonthKey(year, month) {
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+function getMonthLabel(year, month) {
+  const KR_MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  return `${year}년 ${KR_MONTHS[month - 1]}`;
+}
+
+function changeMonth(delta) {
+  MONTH += delta;
+  if (MONTH > 12) { MONTH = 1; YEAR++; }
+  if (MONTH < 1) { MONTH = 12; YEAR--; }
+  initMonth();
+}
+
+function goToCurrentMonth() {
+  const now = new Date();
+  YEAR = now.getFullYear();
+  MONTH = now.getMonth() + 1;
+  initMonth();
+}
+
+function isCurrentMonth() {
+  const now = new Date();
+  return YEAR === now.getFullYear() && MONTH === now.getMonth() + 1;
+}
+
+async function initMonth() {
+  WEEKS = buildWeeks(YEAR, MONTH);
+  activeWeekIdx = detectCurrentWeek();
+  updateMonthUI();
+  assignments = {};
+  document.getElementById('scheduleWrapper').innerHTML =
+    '<div style="padding:40px;text-align:center;color:var(--text-dim);">불러오는 중...</div>';
+  await loadData();
+  renderAll();
+}
+
+function updateMonthUI() {
+  const label = getMonthLabel(YEAR, MONTH);
+  const KR_MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('pageTitle').innerHTML =
+    `${KR_MONTHS[MONTH-1].replace('월','')}月 <span class="accent">코치 스케줄</span>`;
+  document.getElementById('monthNavTitle').textContent = label;
+
+  // 이번 달 버튼 강조
+  document.getElementById('todayBtn').classList.toggle('is-current', isCurrentMonth());
+
+  // 신규 달 감지 → 초기화 안내 배너
+  checkNewMonthBanner();
+}
+
+function checkNewMonthBanner() {
+  const now = new Date();
+  const isCurrentMon = isCurrentMonth();
+  const bar = document.getElementById('monthResetBar');
+  // 이번 달이고, 배정이 하나도 없으면(= 신규 달) 배너 표시
+  const hasData = Object.keys(assignments).some(k => assignments[k]);
+  if (isCurrentMon && !hasData && !isFirstLoad) {
+    document.getElementById('resetBarMonth').textContent = getMonthLabel(YEAR, MONTH);
+    bar.classList.add('show');
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+/* =========================================================================
+   API CALLS
+   ========================================================================= */
+function setSyncStatus(status, text) {
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncText');
+  dot.className = 'sync-dot ' + (status || '');
+  txt.textContent = text || '';
+}
+
+async function apiGet() {
+  if (APPS_SCRIPT_URL.includes('YOUR_APPS_SCRIPT_URL_HERE')) throw new Error('URL 미설정');
+  const monthKey = getMonthKey(YEAR, MONTH);
+  const res = await fetch(`${APPS_SCRIPT_URL}?month=${monthKey}&t=${Date.now()}`);
+  if (!res.ok) throw new Error('네트워크 오류: ' + res.status);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || '서버 오류');
+  return json.data;
+}
+
+async function apiPost(payload) {
+  if (APPS_SCRIPT_URL.includes('YOUR_APPS_SCRIPT_URL_HERE')) throw new Error('URL 미설정');
+  payload.month = getMonthKey(YEAR, MONTH);
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+    redirect: 'follow'
+  });
+  if (!res.ok) throw new Error('네트워크 오류: ' + res.status);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || '서버 오류');
+  return json.data;
+}
+
+async function loadData() {
+  setSyncStatus('syncing', '동기화 중...');
+  try {
+    const data = await apiGet();
+    assignments = data.assignments || {};
+    if (Array.isArray(data.coaches) && data.coaches.length === 8) {
+      coaches = data.coaches;
+    }
+    setSyncStatus('connected', '연결됨');
+    return true;
+  } catch (e) {
+    console.error('Load failed:', e);
+    setSyncStatus('error', '연결 실패');
+    return false;
+  }
+}
+
+/* =========================================================================
+   LOCAL STORAGE
+   ========================================================================= */
+function loadMyCoach() {
+  try { const v = localStorage.getItem(STORAGE_KEY_ME); if (v) selectedCoach = v; } catch(e) {}
+}
+function saveMyCoach() {
+  try {
+    if (selectedCoach) localStorage.setItem(STORAGE_KEY_ME, selectedCoach);
+    else localStorage.removeItem(STORAGE_KEY_ME);
+  } catch(e) {}
+}
+
+/* =========================================================================
+   HELPERS
+   ========================================================================= */
+function getWeekEmptyCount(weekIdx) {
+  const week = WEEKS[weekIdx];
+  let empty = 0;
+  week.forEach(d => {
+    if (d === null) return;
+    ROLES.forEach(role => { if (!assignments[`${d}_${role.id}`]) empty++; });
+  });
+  return empty;
+}
+
+function getWeekRange(weekIdx) {
+  const week = WEEKS[weekIdx];
+  const days = week.filter(d => d !== null);
+  if (days.length === 0) return '';
+  const m = String(MONTH).padStart(2,'0');
+  return `${MONTH}/${days[0]} ~ ${MONTH}/${days[days.length-1]}`;
+}
+
+function detectCurrentWeek() {
+  if (!isCurrentMonth()) return 0;
+  const day = new Date().getDate();
+  for (let i = 0; i < WEEKS.length; i++) {
+    if (WEEKS[i].includes(day)) return i;
+  }
+  return 0;
+}
+
+function showConfigWarning() {
+  document.getElementById('configWarning').innerHTML = `
+    <div class="config-warning">
+      <strong>⚠️ 설정 필요</strong><br>
+      HTML 파일 안의 <code>APPS_SCRIPT_URL</code> 값을 Google Apps Script 웹앱 URL로 교체해야 합니다.
+      아래 Apps Script 코드를 배포한 후 URL을 붙여넣으세요.
+    </div>
+  `;
+}
+
+/* =========================================================================
+   RENDER
+   ========================================================================= */
+function renderCoachList() {
+  const list = document.getElementById('coachList');
+  const counts = {};
+  coaches.forEach(c => counts[c] = 0);
+  Object.values(assignments).forEach(name => { if (counts[name] !== undefined) counts[name]++; });
+  list.innerHTML = coaches.map(name => `
+    <div class="coach-chip ${selectedCoach === name ? 'active' : ''}"
+         onclick="selectCoach('${escapeAttr(name)}')">
+      ${escapeHtml(name)}
+      <span class="count">${counts[name] || 0}건</span>
+    </div>
+  `).join('');
+}
+
+function renderWeekTabs() {
+  const nav = document.getElementById('weekNav');
+  nav.innerHTML = WEEKS.map((week, idx) => {
+    const emptyCount = getWeekEmptyCount(idx);
+    const range = getWeekRange(idx);
+    const isActive = idx === activeWeekIdx;
+    const noEmpty = emptyCount === 0;
+    return `
+      <button class="week-tab ${isActive ? 'active' : ''} ${noEmpty ? 'no-empty' : ''}"
+              onclick="setActiveWeek(${idx})">
+        <span class="tab-label">WEEK ${idx + 1}</span>
+        <span class="tab-meta">
+          <span>${range}</span>
+          <span>·</span>
+          <span class="tab-empty-count">${noEmpty ? '✓ 완료' : `공석 ${emptyCount}`}</span>
+        </span>
+      </button>
+    `;
+  }).join('');
+}
+
+function renderSchedule() {
+  const wrapper = document.getElementById('scheduleWrapper');
+  const week = WEEKS[activeWeekIdx];
+  const todayDate = isCurrentMonth() ? new Date().getDate() : -1;
+  const emptyCount = getWeekEmptyCount(activeWeekIdx);
+
+  let html = `
+    <div class="week-info-bar">
+      <div>
+        <div class="week-info-title">WEEK ${activeWeekIdx + 1}</div>
+        <div class="week-info-sub">${getWeekRange(activeWeekIdx)}</div>
+      </div>
+      <div class="week-empty-badge ${emptyCount === 0 ? 'zero' : ''}">
+        ${emptyCount === 0 ? '✓ 모든 자리 배정 완료' : `공석 ${emptyCount}자리`}
+      </div>
+    </div>
+  `;
+
+  html += '<div class="table-scroll"><table>';
+  html += '<thead class="date-header"><tr><th class="role-col">역할 / ROLE</th>';
+  week.forEach((d, dayIdx) => {
+    let cls = '';
+    if (d === null) cls = 'disabled';
+    else {
+      if (dayIdx === 5) cls = 'weekend-sat';
+      if (dayIdx === 6) cls = 'weekend-sun';
+      if (d === todayDate) cls = 'today';
+    }
+    html += `<th class="${cls}">
+      <div class="date-weekday">${WEEKDAY_HEADERS[dayIdx]}</div>
+      <div class="date-num">${d ? `${MONTH}/${d}` : '—'}</div>
+    </th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  ROLE_GROUPS.forEach((groupObj, groupIdx) => {
+    if (groupIdx > 0) html += '<tr class="group-divider"><td colspan="8"></td></tr>';
+    html += `<tr class="group-header"><td colspan="8">${groupObj.name}</td></tr>`;
+    groupObj.roles.forEach(role => {
+      html += '<tr>';
+      html += `<td class="role-label group-${groupObj.group}">${role.label}</td>`;
+      week.forEach(d => {
+        if (d === null) {
+          html += '<td><div class="slot disabled"></div></td>';
+        } else {
+          const key = `${d}_${role.id}`;
+          const val = assignments[key];
+          const isPending = pendingKeys.has(key);
+          const pendingCls = isPending ? ' pending' : '';
+          if (val) {
+            html += `<td><div class="slot filled${pendingCls}" onclick="openSlotModal(${d},'${role.id}')">${escapeHtml(val)}</div></td>`;
+          } else {
+            html += `<td><div class="slot empty${pendingCls}" onclick="openSlotModal(${d},'${role.id}')"></div></td>`;
+          }
+        }
+      });
+      html += '</tr>';
+    });
+  });
+  html += '</tbody></table></div>';
+  wrapper.innerHTML = html;
+  updateStats();
+}
+
+function updateStats() {
+  const daysInMonth = new Date(YEAR, MONTH, 0).getDate();
+  const total = daysInMonth * ROLES.length;
+  const filled = Object.keys(assignments).filter(k => assignments[k]).length;
+  document.getElementById('statFilled').textContent = filled;
+  document.getElementById('statEmpty').textContent = total - filled;
+}
+
+function renderAll() {
+  renderCoachList();
+  renderWeekTabs();
+  renderSchedule();
+  checkNewMonthBanner();
+}
+
+/* =========================================================================
+   ACTIONS
+   ========================================================================= */
+function setActiveWeek(idx) {
+  activeWeekIdx = idx;
+  renderWeekTabs();
+  renderSchedule();
+}
+
+function selectCoach(name) {
+  selectedCoach = selectedCoach === name ? null : name;
+  saveMyCoach();
+  renderCoachList();
+  showToast(selectedCoach ? `${selectedCoach} 선택됨` : '선택 해제');
+}
+
+function openSlotModal(day, roleId) {
+  currentEditSlot = { day, roleId };
+  const role = ROLES.find(r => r.id === roleId);
+  const key = `${day}_${roleId}`;
+  const currentValue = assignments[key];
+
+  document.getElementById('modalTitle').textContent = `${MONTH}월 ${day}일 · ${role.label}`;
+  document.getElementById('modalSubtitle').textContent = currentValue
+    ? `현재 배정: ${currentValue}`
+    : selectedCoach
+      ? `'${selectedCoach}'(으)로 배정하려면 본인 이름을 탭하세요`
+      : '배정할 코치를 선택하세요';
+
+  const grid = document.getElementById('modalCoachGrid');
+  grid.innerHTML = coaches.map(name => `
+    <button class="modal-coach-btn ${currentValue === name ? 'current' : ''}"
+            onclick="assignSlot('${escapeAttr(name)}')">
+      ${escapeHtml(name)}${currentValue === name ? ' ✓' : ''}
+    </button>
+  `).join('');
+
+  document.getElementById('modalClearBtn').style.display = currentValue ? 'inline-block' : 'none';
+  document.getElementById('slotModal').classList.add('open');
+}
+
+function closeSlotModal() {
+  document.getElementById('slotModal').classList.remove('open');
+  currentEditSlot = null;
+}
+
+async function assignSlot(coachName) {
+  if (!currentEditSlot) return;
+  const { day, roleId } = currentEditSlot;
+  const key = `${day}_${roleId}`;
+  const prevValue = assignments[key];
+  assignments[key] = coachName;
+  pendingKeys.add(key);
+  closeSlotModal();
+  renderAll();
+  setSyncStatus('syncing', '저장 중...');
+
+  try {
+    await apiPost({ action: 'assign', day, roleId, coachName });
+    pendingKeys.delete(key);
+    setSyncStatus('connected', '저장됨');
+    renderAll();
+    showToast(`${coachName} 배정 완료`);
+  } catch (e) {
+    if (prevValue) assignments[key] = prevValue; else delete assignments[key];
+    pendingKeys.delete(key);
+    renderAll();
+    setSyncStatus('error', '저장 실패');
+    showToast('저장 실패. 인터넷 연결을 확인하세요.', true);
+  }
+}
+
+async function clearSlot() {
+  if (!currentEditSlot) return;
+  const { day, roleId } = currentEditSlot;
+  const key = `${day}_${roleId}`;
+  const prevValue = assignments[key];
+  delete assignments[key];
+  pendingKeys.add(key);
+  closeSlotModal();
+  renderAll();
+  setSyncStatus('syncing', '저장 중...');
+
+  try {
+    await apiPost({ action: 'clear', day, roleId });
+    pendingKeys.delete(key);
+    setSyncStatus('connected', '저장됨');
+    renderAll();
+    showToast('비움');
+  } catch (e) {
+    if (prevValue) assignments[key] = prevValue;
+    pendingKeys.delete(key);
+    renderAll();
+    setSyncStatus('error', '저장 실패');
+    showToast('저장 실패. 인터넷 연결을 확인하세요.', true);
+  }
+}
+
+/* =========================================================================
+   COACH EDITOR
+   ========================================================================= */
+function openCoachEditor() {
+  const list = document.getElementById('coachEditorList');
+  list.innerHTML = coaches.map((name, i) => `
+    <div class="coach-editor-row">
+      <label>코치${i+1}</label>
+      <input type="text" id="coachInput${i}" value="${escapeAttr(name)}" maxlength="10" placeholder="이름 입력">
+    </div>
+  `).join('');
+  document.getElementById('coachModal').classList.add('open');
+}
+
+function closeCoachEditor() { document.getElementById('coachModal').classList.remove('open'); }
+
+async function saveCoachNames() {
+  const newCoaches = [];
+  for (let i = 0; i < 8; i++) {
+    const input = document.getElementById(`coachInput${i}`);
+    const val = input.value.trim() || `코치${i+1}`;
+    newCoaches.push(val);
+  }
+  if (new Set(newCoaches).size !== 8) {
+    showToast('이름이 중복됩니다. 다르게 입력해주세요.', true);
+    return;
+  }
+  const btn = document.getElementById('saveCoachesBtn');
+  btn.textContent = '저장 중...';
+  btn.disabled = true;
+  setSyncStatus('syncing', '저장 중...');
+  try {
+    await apiPost({ action: 'saveCoaches', coaches: newCoaches });
+    const oldCoaches = [...coaches];
+    coaches = newCoaches;
+    if (selectedCoach) {
+      const idx = oldCoaches.indexOf(selectedCoach);
+      if (idx >= 0) { selectedCoach = newCoaches[idx]; saveMyCoach(); }
+    }
+    await loadData();
+    renderAll();
+    closeCoachEditor();
+    setSyncStatus('connected', '연결됨');
+    showToast('코치 이름 저장됨');
+  } catch (e) {
+    setSyncStatus('error', '저장 실패');
+    showToast('저장 실패: ' + e.message, true);
+  } finally {
+    btn.textContent = '저장';
+    btn.disabled = false;
+  }
+}
+
+/* =========================================================================
+   월 초기화
+   ========================================================================= */
+function openResetConfirm() {
+  const prevMonth = MONTH === 1 ? 12 : MONTH - 1;
+  const prevYear = MONTH === 1 ? YEAR - 1 : YEAR;
+  document.getElementById('resetModalMonth').textContent = getMonthLabel(YEAR, MONTH);
+  document.getElementById('resetModalPrevMonth').textContent = getMonthLabel(prevYear, prevMonth);
+  document.getElementById('resetModal').classList.add('open');
+}
+
+function closeResetModal() { document.getElementById('resetModal').classList.remove('open'); }
+
+async function confirmReset() {
+  const btn = document.getElementById('resetConfirmBtn');
+  btn.textContent = '초기화 중...';
+  btn.disabled = true;
+  setSyncStatus('syncing', '초기화 중...');
+  try {
+    await apiPost({ action: 'resetMonth' });
+    assignments = {};
+    closeResetModal();
+    document.getElementById('monthResetBar').classList.remove('show');
+    renderAll();
+    setSyncStatus('connected', '연결됨');
+    showToast(`${getMonthLabel(YEAR, MONTH)} 초기화 완료`);
+  } catch (e) {
+    setSyncStatus('error', '초기화 실패');
+    showToast('초기화 실패: ' + e.message, true);
+  } finally {
+    btn.textContent = '초기화 실행';
+    btn.disabled = false;
+  }
+}
+
+/* =========================================================================
+   UTIL
+   ========================================================================= */
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+function escapeAttr(str) {
+  return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+let toastTimer;
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast' + (isError ? ' error' : ''), 2500);
+}
+
+document.getElementById('slotModal').addEventListener('click', e => { if (e.target.id === 'slotModal') closeSlotModal(); });
+document.getElementById('coachModal').addEventListener('click', e => { if (e.target.id === 'coachModal') closeCoachEditor(); });
+document.getElementById('resetModal').addEventListener('click', e => { if (e.target.id === 'resetModal') closeResetModal(); });
+
+/* =========================================================================
+   AUTO REFRESH
+   ========================================================================= */
+async function refresh() {
+  if (pendingKeys.size > 0) return;
+  try {
+    const data = await apiGet();
+    const newAssignments = data.assignments || {};
+    const newCoaches = (Array.isArray(data.coaches) && data.coaches.length === 8) ? data.coaches : coaches;
+    if (JSON.stringify(newAssignments) !== JSON.stringify(assignments) ||
+        JSON.stringify(newCoaches) !== JSON.stringify(coaches)) {
+      assignments = newAssignments;
+      coaches = newCoaches;
+      renderAll();
+    }
+    setSyncStatus('connected', '연결됨');
+  } catch (e) {
+    setSyncStatus('error', '연결 실패');
+  }
+}
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+(async () => {
+  if (APPS_SCRIPT_URL.includes('YOUR_APPS_SCRIPT_URL_HERE')) {
+    showConfigWarning();
+    setSyncStatus('error', '설정 필요');
+    WEEKS = buildWeeks(YEAR, MONTH);
+    updateMonthUI();
+    renderAll();
+    return;
+  }
+
+  loadMyCoach();
+  WEEKS = buildWeeks(YEAR, MONTH);
+  updateMonthUI();
+  await loadData();
+  isFirstLoad = false;
+  renderAll();
+
+  setInterval(refresh, 15000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+})();
+</script>
+</body>
+</html>
