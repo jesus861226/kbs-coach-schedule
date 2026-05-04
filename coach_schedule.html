@@ -266,11 +266,11 @@
   }
 
   .week-tab {
-    flex: 1; min-width: 100px;
+    flex: 1; min-width: 0;
     background: transparent;
     border: none;
     color: var(--text-dim);
-    padding: 10px 14px;
+    padding: 8px 4px;
     border-radius: 7px;
     cursor: pointer;
     font-family: inherit;
@@ -279,6 +279,7 @@
     display: flex; flex-direction: column;
     align-items: center; gap: 2px;
     white-space: nowrap;
+    overflow: hidden;
   }
   .week-tab:hover { color: var(--text); }
   .week-tab.active {
@@ -288,13 +289,20 @@
   }
   .week-tab .tab-label {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 16px; letter-spacing: 0.05em;
+    font-size: 15px; letter-spacing: 0.03em;
   }
   .week-tab .tab-meta {
-    font-size: 10px; opacity: 0.7;
-    display: flex; gap: 6px; align-items: center;
+    font-size: 9px; opacity: 0.7;
+    display: flex; gap: 3px; align-items: center;
+    max-width: 100%; overflow: hidden;
   }
-  .week-tab .tab-empty-count { color: var(--empty); font-weight: 700; }
+  .week-tab .tab-date { overflow: hidden; text-overflow: ellipsis; }
+  .week-tab .tab-empty-count {
+    display: block;
+    font-size: 9px; font-weight: 700;
+    color: var(--empty);
+    opacity: 1;
+  }
   .week-tab.no-empty .tab-empty-count { color: var(--filled); }
 
   .legend {
@@ -597,7 +605,6 @@
     header { flex-direction: column; align-items: flex-start; }
     .stats { width: 100%; justify-content: space-around; gap: 12px; }
     .coach-list { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); }
-    .week-tab { min-width: 80px; padding: 7px 8px; }
     .week-tab .tab-label { font-size: 13px; }
     .month-nav { padding: 6px 10px; }
 
@@ -740,7 +747,7 @@
 /* =========================================================================
    ⚙️ 설정: Apps Script 웹앱 URL을 여기에 붙여넣으세요
    ========================================================================= */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKFxWfl-PFWJNJGyI4V5dlEd5iNkds_BDuM6xd3XWXKd3hf3W34Ez1UF-8L9Oj1Z0j/exec';
+const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
 
 /* =========================================================================
    DATA
@@ -1051,10 +1058,9 @@ function renderWeekTabs() {
               onclick="setActiveWeek(${idx})">
         <span class="tab-label">WEEK ${idx + 1}</span>
         <span class="tab-meta">
-          <span>${range}</span>
-          <span>·</span>
-          <span class="tab-empty-count">${noEmpty ? '✓ 완료' : `미배정 ${emptyCount}`}</span>
+          <span class="tab-date">${range}</span>
         </span>
+        <span class="tab-empty-count">${noEmpty ? '✓' : `미배정 ${emptyCount}`}</span>
       </button>
     `;
   }).join('');
