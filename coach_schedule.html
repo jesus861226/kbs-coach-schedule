@@ -458,7 +458,11 @@ async function loadData() {
   try {
     const data=await apiGet(); assignments=data.assignments||{};
     /* ★ 12명으로 체크 */
-    if(Array.isArray(data.coaches)&&data.coaches.length===12) coaches=data.coaches;
+    if(Array.isArray(data.coaches)&&data.coaches.length>0){
+      const loaded=data.coaches.slice(0,12);
+      while(loaded.length<12) loaded.push(`담당자${loaded.length+1}`);
+      coaches=loaded;
+    }
     setSyncStatus('connected','연결됨'); return true;
   } catch(e) { console.error('Load failed:',e); setSyncStatus('error','연결 실패'); return false; }
 }
@@ -763,7 +767,12 @@ async function refresh() {
   if(pendingKeys.size>0)return;
   try {
     const data=await apiGet(), na=data.assignments||{};
-    const nc=(Array.isArray(data.coaches)&&data.coaches.length===12)?data.coaches:coaches;
+    let nc=coaches;
+    if(Array.isArray(data.coaches)&&data.coaches.length>0){
+      const loaded=data.coaches.slice(0,12);
+      while(loaded.length<12) loaded.push(`담당자${loaded.length+1}`);
+      nc=loaded;
+    }
     if(JSON.stringify(na)!==JSON.stringify(assignments)||JSON.stringify(nc)!==JSON.stringify(coaches)){assignments=na;coaches=nc;renderAll();}
     setSyncStatus('connected','연결됨');
   } catch(e){setSyncStatus('error','연결 실패');}
