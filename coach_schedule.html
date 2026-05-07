@@ -1,781 +1,2493 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>코치 스케줄 - 김광림야구학교</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0a0a0a; --surface: #141414; --surface-2: #1c1c1c; --surface-3: #232323;
-    --border: #2a2a2a; --border-light: #333; --text: #f5f5f5; --text-dim: #888; --text-faint: #555;
-    --empty: #ef4444; --empty-bg: rgba(239,68,68,0.1); --empty-hover: rgba(239,68,68,0.2);
-    --filled: #10b981; --filled-bg: rgba(16,185,129,0.14); --accent: #facc15;
-    --shadow: 0 4px 20px rgba(0,0,0,0.4);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text);
-    padding: 20px 16px 60px; min-height: 100vh; -webkit-font-smoothing: antialiased;
-    background-image: radial-gradient(circle at 10% 0%, rgba(250,204,21,0.04) 0%, transparent 40%),
-      radial-gradient(circle at 90% 100%, rgba(239,68,68,0.04) 0%, transparent 40%);
-  }
-  .container { max-width: 1300px; margin: 0 auto; }
-  header {
-    display: flex; align-items: flex-end; justify-content: space-between;
-    padding-bottom: 16px; margin-bottom: 20px; border-bottom: 2px solid var(--border);
-    flex-wrap: wrap; gap: 16px;
-  }
-  .title-block h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(32px,5vw,52px); letter-spacing: 0.02em; line-height: 0.95; }
-  .title-block h1 .accent { color: var(--accent); }
-  .title-block .subtitle { font-size: 11px; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 6px; font-weight: 500; }
-  .stats { display: flex; gap: 24px; align-items: center; }
-  .stat { text-align: right; }
-  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-faint); font-weight: 600; margin-bottom: 2px; }
-  .stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 0.02em; }
-  .stat-value.empty-stat { color: var(--empty); }
-  .stat-value.filled-stat { color: var(--filled); }
-  .sync-status { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); margin-left: 8px; }
-  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); transition: all 0.2s; }
-  .sync-dot.connected { background: var(--filled); box-shadow: 0 0 8px var(--filled); }
-  .sync-dot.syncing { background: var(--accent); animation: pulse 1s infinite; }
-  .sync-dot.error { background: var(--empty); }
-  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
-  .month-nav { display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:8px 14px; margin-bottom:16px; }
-  .month-nav-btn { background:transparent; border:1px solid var(--border-light); color:var(--text-dim); width:32px; height:32px; border-radius:6px; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0; }
-  .month-nav-btn:hover { border-color:var(--accent); color:var(--accent); }
-  .month-nav-btn:disabled { opacity:0.3; cursor:not-allowed; }
-  .month-nav-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.06em; color:var(--text); flex:1; text-align:center; }
-  .month-nav-today { background:transparent; border:1px solid var(--border-light); color:var(--text-dim); padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:600; font-family:inherit; letter-spacing:0.05em; transition:all 0.15s; flex-shrink:0; }
-  .month-nav-today:hover, .month-nav-today.is-current { border-color:var(--accent); color:var(--accent); }
-  .month-reset-bar { display:none; align-items:center; justify-content:space-between; background:rgba(250,204,21,0.06); border:1px solid rgba(250,204,21,0.25); border-radius:10px; padding:12px 16px; margin-bottom:16px; font-size:13px; gap:12px; flex-wrap:wrap; }
-  .month-reset-bar.show { display:flex; }
-  .month-reset-bar .reset-info { color:var(--text-dim); }
-  .month-reset-bar .reset-info strong { color:var(--accent); }
-  .reset-btn { background:var(--accent); color:#000; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:700; letter-spacing:0.05em; transition:all 0.15s; flex-shrink:0; }
-  .reset-btn:hover { opacity:0.85; }
-  .coach-panel { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
-  .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:12px; }
-  .panel-title { font-family:'Archivo',sans-serif; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.15em; display:flex; align-items:center; gap:10px; }
-  .panel-title::before { content:''; width:4px; height:16px; background:var(--accent); display:inline-block; }
-  .panel-hint { font-size:11px; color:var(--text-dim); }
-  .coach-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(115px,1fr)); gap:6px; }
-  .coach-chip { background:var(--surface-2); border:2px solid var(--border-light); border-radius:8px; padding:10px 12px; cursor:pointer; transition:all 0.15s ease; text-align:center; font-weight:600; font-size:13px; user-select:none; }
-  .coach-chip:hover { border-color:var(--accent); transform:translateY(-1px); }
-  .coach-chip.active { background:var(--accent); color:#000; border-color:var(--accent); box-shadow:0 0 0 3px rgba(250,204,21,0.25); }
-  .coach-chip .count { display:block; font-size:10px; opacity:0.65; margin-top:2px; font-weight:500; }
-  .coach-chip.active .count { opacity:0.8; }
-  .edit-coach-btn { background:transparent; border:1px solid var(--border-light); color:var(--text-dim); padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-family:inherit; transition:all 0.15s; }
-  .edit-coach-btn:hover { border-color:var(--accent); color:var(--accent); }
-  .week-nav { display:flex; gap:0; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:4px; margin-bottom:16px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  .week-tab { flex:1; min-width:0; background:transparent; border:none; color:var(--text-dim); padding:8px 4px; border-radius:7px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:600; transition:all 0.15s; display:flex; flex-direction:column; align-items:center; gap:2px; white-space:nowrap; overflow:hidden; }
-  .week-tab:hover { color:var(--text); }
-  .week-tab.active { background:var(--surface-3); color:var(--text); box-shadow:inset 0 0 0 1px var(--border-light); }
-  .week-tab .tab-label { font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:0.03em; }
-  .week-tab .tab-meta { font-size:9px; opacity:0.7; display:flex; gap:3px; align-items:center; max-width:100%; overflow:hidden; }
-  .week-tab .tab-date { overflow:hidden; text-overflow:ellipsis; }
-  .week-tab .tab-empty-count { display:block; font-size:9px; font-weight:700; color:var(--empty); opacity:1; }
-  .week-tab.no-empty .tab-empty-count { color:var(--filled); }
-  .legend { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:14px; font-size:12px; color:var(--text-dim); align-items:center; }
-  .legend-item { display:flex; align-items:center; gap:6px; }
-  .legend-dot { width:12px; height:12px; border-radius:3px; }
-  .legend-dot.empty { background:var(--empty-bg); border:1px solid var(--empty); }
-  .legend-dot.filled { background:var(--filled-bg); border:1px solid var(--filled); }
-  .schedule-wrapper { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; position:relative; }
-  .week-info-bar { padding:12px 18px; background:var(--surface-2); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
-  .week-info-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.05em; }
-  .week-info-sub { font-size:12px; color:var(--text-dim); }
-  .week-empty-badge { background:var(--empty-bg); color:var(--empty); border:1px solid var(--empty); padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; }
-  .week-empty-badge.zero { background:var(--filled-bg); color:var(--filled); border-color:var(--filled); }
-  .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  table { width:100%; border-collapse:collapse; table-layout:fixed; }
-  thead.date-header th { background:var(--surface-2); padding:10px 4px; text-align:center; border-bottom:1px solid var(--border); border-right:1px solid var(--border); font-weight:normal; width:calc((100% - 130px) / 7); }
-  thead.date-header th:last-child { border-right:none; }
-  thead.date-header th.role-col { width:130px; min-width:130px; text-align:left; padding-left:10px; color:var(--text-dim); font-family:'Archivo',sans-serif; font-size:9px; text-transform:uppercase; letter-spacing:0.1em; font-weight:800; position:sticky; left:0; z-index:2; background:var(--surface-2); }
-  tbody .role-label { position:sticky; left:0; z-index:1; }
-  tr.group-header td { position:sticky; left:0; }
-  .date-weekday { font-size:10px; color:var(--text-dim); letter-spacing:0.05em; margin-bottom:1px; }
-  .date-num { font-family:'Bebas Neue',sans-serif; font-size:16px; letter-spacing:0.02em; color:var(--text); }
-  thead.date-header th.weekend-sat .date-weekday,
-  thead.date-header th.weekend-sat .date-num { color:#60a5fa; }
-  thead.date-header th.weekend-sun .date-weekday,
-  thead.date-header th.weekend-sun .date-num { color:#f87171; }
-  thead.date-header th.today { background:var(--accent); }
-  thead.date-header th.today .date-weekday,
-  thead.date-header th.today .date-num { color:#000; }
-  thead.date-header th.disabled { background:#080808; }
-  thead.date-header th.disabled .date-num,
-  thead.date-header th.disabled .date-weekday { color:#333; }
-  tbody td { border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:0; height:38px; }
-  tbody td:last-child { border-right:none; }
-  .role-label { padding:0 8px; font-size:11px; font-weight:500; color:var(--text-dim); background:var(--surface-2); border-right:1px solid var(--border) !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px; }
-  .role-label.group-shuttle-player { border-left:3px solid #3b82f6; }
-  .role-label.group-coach-player { border-left:3px solid #10b981; }
-  .role-label.group-shuttle-hobby { border-left:3px solid #8b5cf6; }
-  .role-label.group-coach-hobby { border-left:3px solid #f59e0b; }
-  .role-label.group-shuttle-return { border-left:3px solid #ec4899; }
-  tr.group-divider td { background:#0c0c0c; border:none; height:8px; padding:0; }
-  tr.group-header td { background:#0f0f0f; color:var(--text-faint); font-size:10px; text-transform:uppercase; letter-spacing:0.15em; font-weight:700; padding:6px 16px; height:auto; border-bottom:1px solid var(--border); }
-  .slot { width:100%; height:100%; min-height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--empty-bg); font-size:11px; font-weight:600; transition:all 0.12s ease; text-align:center; padding:2px; overflow:hidden; word-break:keep-all; }
-  .slot:hover { background:var(--empty-hover); }
-  .slot.filled { background:var(--filled-bg); color:var(--filled); }
-  .slot.filled:hover { background:rgba(16,185,129,0.25); }
-  .slot.empty::before { content:'비어있음'; color:var(--empty); font-weight:700; font-size:11px; opacity:0.85; }
-  .slot.empty:hover::before { opacity:1; }
-  .slot.disabled { background:#080808; cursor:not-allowed; }
-  .slot.disabled::before { content:''; }
-  .slot.pending { opacity:0.5; pointer-events:none; }
-  .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:100; padding:20px; }
-  .modal-backdrop.open { display:flex; }
-  .modal { background:var(--surface); border:1px solid var(--border-light); border-radius:12px; padding:24px; max-width:420px; width:100%; box-shadow:var(--shadow); max-height:90vh; overflow-y:auto; }
-  .modal h3 { font-family:'Archivo',sans-serif; font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
-  .modal .modal-subtitle { font-size:13px; color:var(--text-dim); margin-bottom:18px; line-height:1.5; }
-  .modal-coach-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:12px; }
-  .modal-coach-btn { background:var(--surface-2); border:1px solid var(--border-light); color:var(--text); padding:12px; border-radius:8px; cursor:pointer; font-family:inherit; font-size:14px; font-weight:500; transition:all 0.12s; }
-  .modal-coach-btn:hover { border-color:var(--accent); background:var(--surface); }
-  .modal-coach-btn.current { background:var(--filled-bg); border-color:var(--filled); color:var(--filled); }
-  .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; padding-top:16px; border-top:1px solid var(--border); }
-  .btn { padding:10px 16px; border-radius:6px; border:none; cursor:pointer; font-family:inherit; font-size:13px; font-weight:600; transition:all 0.12s; }
-  .btn-ghost { background:transparent; color:var(--text-dim); border:1px solid var(--border-light); }
-  .btn-ghost:hover { color:var(--text); }
-  .btn-danger { background:var(--empty-bg); color:var(--empty); border:1px solid var(--empty); }
-  .btn-danger:hover { background:var(--empty); color:#fff; }
-  .btn-primary { background:var(--accent); color:#000; }
-  .coach-editor-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
-  .coach-editor-row label { width:58px; font-size:12px; color:var(--text-dim); font-weight:600; flex-shrink:0; }
-  .coach-editor-row input { flex:1; background:var(--surface-2); border:1px solid var(--border-light); color:var(--text); padding:8px 10px; border-radius:6px; font-family:inherit; font-size:13px; min-width:0; }
-  .coach-editor-row input:focus { outline:none; border-color:var(--accent); }
-  .reset-confirm-modal { max-width:360px; }
-  .reset-confirm-modal .warn-icon { font-size:32px; margin-bottom:12px; }
-  .reset-confirm-modal p { font-size:13px; color:var(--text-dim); line-height:1.6; margin-bottom:8px; }
-  .reset-confirm-modal strong { color:var(--accent); }
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px); background:var(--surface); color:var(--text); padding:12px 20px; border-radius:8px; border:1px solid var(--border-light); box-shadow:var(--shadow); font-size:13px; font-weight:500; transition:transform 0.3s ease; z-index:200; max-width:90%; text-align:center; }
-  .toast.show { transform:translateX(-50%) translateY(0); }
-  .toast.error { border-color:var(--empty); color:var(--empty); }
-  .config-warning { background:rgba(239,68,68,0.1); border:1px solid var(--empty); color:var(--empty); padding:16px; border-radius:10px; margin-bottom:16px; font-size:13px; line-height:1.6; }
-  .config-warning code { background:rgba(0,0,0,0.4); padding:2px 6px; border-radius:4px; font-family:monospace; }
-  .multi-select-bar { display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:8px 14px; margin-bottom:16px; flex-wrap:wrap; }
-  .multi-select-btn { background:transparent; border:1px solid var(--border-light); color:var(--text-dim); padding:7px 14px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:600; transition:all 0.15s; flex-shrink:0; }
-  .multi-select-btn:hover { border-color:var(--accent); color:var(--accent); }
-  .multi-select-btn.active { background:var(--accent); color:#000; border-color:var(--accent); }
-  .multi-select-count { font-size:12px; color:var(--accent); font-weight:700; display:none; }
-  .multi-select-count.show { display:inline; }
-  .multi-apply-btn { background:var(--accent); color:#000; border:none; padding:7px 16px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:700; transition:all 0.15s; display:none; flex-shrink:0; }
-  .multi-apply-btn.show { display:inline-block; }
-  .multi-apply-btn:hover { opacity:0.85; }
-  .multi-cancel-btn { background:transparent; color:var(--text-dim); border:1px solid var(--border-light); padding:7px 12px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:600; transition:all 0.15s; display:none; flex-shrink:0; }
-  .multi-cancel-btn.show { display:inline-block; }
-  .copy-prev-btn { background:transparent; border:1px solid var(--border-light); color:var(--text-dim); padding:7px 14px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:600; transition:all 0.15s; margin-left:auto; flex-shrink:0; }
-  .copy-prev-btn:hover { border-color:#60a5fa; color:#60a5fa; }
-  .slot.multi-selected { outline:2px solid var(--accent); outline-offset:-2px; background:rgba(250,204,21,0.15) !important; }
-  .slot.multi-selected::after { content:'✓'; color:var(--accent); font-size:14px; font-weight:900; }
-  .slot.multi-selected::before { display:none; }
-  .copy-modal { max-width:520px; }
-  .copy-preview-table { width:100%; border-collapse:collapse; font-size:11px; margin:12px 0; max-height:320px; overflow-y:auto; display:block; }
-  .copy-preview-table th { background:var(--surface-2); color:var(--text-dim); padding:6px 8px; text-align:left; border-bottom:1px solid var(--border); font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; position:sticky; top:0; }
-  .copy-preview-table td { padding:5px 8px; border-bottom:1px solid var(--border); color:var(--text-dim); }
-  .copy-preview-table td.coach-name { font-weight:600; }
-  .copy-preview-table tr:last-child td { border-bottom:none; }
-  .copy-preview-empty { text-align:center; color:var(--text-faint); padding:20px; font-size:13px; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>코치 스케줄 - 김광림야구학교</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        --bg: #0a0a0a;
+        --surface: #141414;
+        --surface-2: #1c1c1c;
+        --surface-3: #232323;
+        --border: #2a2a2a;
+        --border-light: #333;
+        --text: #f5f5f5;
+        --text-dim: #888;
+        --text-faint: #555;
+        --empty: #ef4444;
+        --empty-bg: #dc2626;
+        --empty-hover: #b91c1c;
+        --filled: #10b981;
+        --filled-bg: rgba(16, 185, 129, 0.14);
+        --accent: #facc15;
+        --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
 
-  /* 코치 색상 0~11 (12명) */
-  .coach-color-0  { --cc:#ef4444; --cc-bg:rgba(239,68,68,0.15);   --cc-border:rgba(239,68,68,0.5); }
-  .coach-color-1  { --cc:#f97316; --cc-bg:rgba(249,115,22,0.15);  --cc-border:rgba(249,115,22,0.5); }
-  .coach-color-2  { --cc:#facc15; --cc-bg:rgba(250,204,21,0.15);  --cc-border:rgba(250,204,21,0.5); }
-  .coach-color-3  { --cc:#22c55e; --cc-bg:rgba(34,197,94,0.15);   --cc-border:rgba(34,197,94,0.5); }
-  .coach-color-4  { --cc:#3b82f6; --cc-bg:rgba(59,130,246,0.15);  --cc-border:rgba(59,130,246,0.5); }
-  .coach-color-5  { --cc:#6366f1; --cc-bg:rgba(99,102,241,0.15);  --cc-border:rgba(99,102,241,0.5); }
-  .coach-color-6  { --cc:#a855f8; --cc-bg:rgba(168,85,248,0.15);  --cc-border:rgba(168,85,248,0.5); }
-  .coach-color-7  { --cc:#f1f5f9; --cc-bg:rgba(241,245,249,0.12); --cc-border:rgba(241,245,249,0.4); }
-  .coach-color-8  { --cc:#06b6d4; --cc-bg:rgba(6,182,212,0.15);   --cc-border:rgba(6,182,212,0.5); }
-  .coach-color-9  { --cc:#f43f5e; --cc-bg:rgba(244,63,94,0.15);   --cc-border:rgba(244,63,94,0.5); }
-  .coach-color-10 { --cc:#84cc16; --cc-bg:rgba(132,204,22,0.15);  --cc-border:rgba(132,204,22,0.5); }
-  .coach-color-11 { --cc:#fb923c; --cc-bg:rgba(251,146,60,0.15);  --cc-border:rgba(251,146,60,0.5); }
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
 
-  .coach-chip.colored { border-color:var(--cc-border); }
-  .coach-chip.colored:hover { border-color:var(--cc); }
-  .coach-chip.colored .coach-name-text { color:var(--cc); }
-  .coach-chip.colored.active { background:var(--cc-bg); border-color:var(--cc); box-shadow:0 0 0 3px color-mix(in srgb,var(--cc) 25%,transparent); color:var(--cc); }
-  .coach-chip.colored.active .count { color:var(--cc); opacity:0.8; }
-  .slot.colored { background:var(--cc-bg); color:var(--cc); border-left:3px solid var(--cc); }
-  .slot.colored:hover { filter:brightness(1.15); }
-  .modal-coach-btn.colored { border-color:var(--cc-border); color:var(--cc); }
-  .modal-coach-btn.colored:hover { background:var(--cc-bg); border-color:var(--cc); }
-  .modal-coach-btn.colored.current { background:var(--cc-bg); border-color:var(--cc); }
-  .legend-coach-dot { width:10px; height:10px; border-radius:3px; background:var(--cc); flex-shrink:0; }
+    body {
+        font-family: 'Noto Sans KR', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        padding: 20px 16px 60px;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        background-image: radial-gradient(circle at 10% 0%, rgba(250, 204, 21, 0.04) 0%, transparent 40%), radial-gradient(circle at 90% 100%, rgba(239, 68, 68, 0.04) 0%, transparent 40%);
+    }
 
-  @media (max-width:768px) {
-    body { padding:10px 6px 60px; }
-    header { flex-direction:column; align-items:flex-start; }
-    .stats { width:100%; justify-content:space-around; gap:12px; }
-    .coach-list { grid-template-columns:repeat(auto-fill,minmax(85px,1fr)); }
-    .week-tab .tab-label { font-size:13px; }
-    .month-nav { padding:6px 10px; }
-    thead.date-header th.role-col { width:90px; min-width:90px; font-size:8px; padding-left:6px; }
-    thead.date-header th { padding:6px 2px; width:calc((100% - 90px) / 7); }
-    .date-weekday { font-size:9px; }
-    .date-num { font-size:13px; }
-    .role-label { font-size:10px; padding:0 4px; max-width:90px; }
-    tbody td { height:34px; }
-    .slot { min-height:34px; font-size:10px; padding:1px; }
-    .slot.empty::before { font-size:9px; content:'—'; }
-    tr.group-header td { font-size:9px; padding:4px 8px; }
-    tr.group-divider td { height:5px; }
-  }
-</style>
+    .container {
+        max-width: 1300px;
+        margin: 0 auto;
+    }
+
+    header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding-bottom: 16px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid var(--border);
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .title-block h1 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: clamp(32px, 5vw, 52px);
+        letter-spacing: 0.02em;
+        line-height: 0.95;
+    }
+
+    .title-block h1 .accent {
+        color: var(--accent);
+    }
+
+    .title-block .subtitle {
+        font-size: 11px;
+        color: var(--text-dim);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-top: 6px;
+        font-weight: 500;
+    }
+
+    .stats {
+        display: flex;
+        gap: 24px;
+        align-items: center;
+    }
+
+    .stat {
+        text-align: right;
+    }
+
+    .stat-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: var(--text-faint);
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .stat-value {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 28px;
+        letter-spacing: 0.02em;
+    }
+
+    .stat-value.empty-stat {
+        color: var(--empty);
+    }
+
+    .stat-value.filled-stat {
+        color: var(--filled);
+    }
+
+    .sync-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-left: 8px;
+    }
+
+    .sync-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text-faint);
+        transition: all 0.2s;
+    }
+
+    .sync-dot.connected {
+        background: var(--filled);
+        box-shadow: 0 0 8px var(--filled);
+    }
+
+    .sync-dot.syncing {
+        background: var(--accent);
+        animation: pulse 1s infinite;
+    }
+
+    .sync-dot.error {
+        background: var(--empty);
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.4;
+        }
+    }
+
+    .month-nav {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 14px;
+        margin-bottom: 16px;
+    }
+
+    .month-nav-btn {
+        background: transparent;
+        border: 1px solid var(--border-light);
+        color: var(--text-dim);
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        flex-shrink: 0;
+    }
+
+    .month-nav-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .month-nav-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+
+    .month-nav-title {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 22px;
+        letter-spacing: 0.06em;
+        color: var(--text);
+        flex: 1;
+        text-align: center;
+    }
+
+    .month-nav-today {
+        background: transparent;
+        border: 1px solid var(--border-light);
+        color: var(--text-dim);
+        padding: 5px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: inherit;
+        letter-spacing: 0.05em;
+        transition: all 0.15s;
+        flex-shrink: 0;
+    }
+
+    .month-nav-today:hover, .month-nav-today.is-current {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .month-reset-bar {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(250, 204, 21, 0.06);
+        border: 1px solid rgba(250, 204, 21, 0.25);
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        font-size: 13px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .month-reset-bar.show {
+        display: flex;
+    }
+
+    .month-reset-bar .reset-info {
+        color: var(--text-dim);
+    }
+
+    .month-reset-bar .reset-info strong {
+        color: var(--accent);
+    }
+
+    .reset-btn {
+        background: var(--accent);
+        color: #000;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        transition: all 0.15s;
+        flex-shrink: 0;
+    }
+
+    .reset-btn:hover {
+        opacity: 0.85;
+    }
+
+    .coach-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-bottom: 16px;
+    }
+
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .panel-title {
+        font-family: 'Archivo', sans-serif;
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .panel-title::before {
+        content: '';
+        width: 4px;
+        height: 16px;
+        background: var(--accent);
+        display: inline-block;
+    }
+
+    .panel-hint {
+        font-size: 11px;
+        color: var(--text-dim);
+    }
+
+    .coach-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+        gap: 6px;
+    }
+
+    .coach-chip {
+        background: var(--surface-2);
+        border: 2px solid var(--border-light);
+        border-radius: 8px;
+        padding: 10px 12px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        text-align: center;
+        font-weight: 600;
+        font-size: 13px;
+        user-select: none;
+    }
+
+    .coach-chip:hover {
+        border-color: var(--accent);
+        transform: translateY(-1px);
+    }
+
+    .coach-chip.active {
+        background: var(--accent);
+        color: #000;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.25);
+    }
+
+    .coach-chip .count {
+        display: block;
+        font-size: 10px;
+        opacity: 0.65;
+        margin-top: 2px;
+        font-weight: 500;
+    }
+
+    .coach-chip.active .count {
+        opacity: 0.8;
+    }
+
+    .edit-coach-btn {
+        background: transparent;
+        border: 1px solid var(--border-light);
+        color: var(--text-dim);
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-family: inherit;
+        transition: all 0.15s;
+    }
+
+    .edit-coach-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .week-nav {
+        display: flex;
+        gap: 0;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 4px;
+        margin-bottom: 16px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .week-tab {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        color: var(--text-dim);
+        padding: 8px 4px;
+        border-radius: 7px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.15s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .week-tab:hover {
+        color: var(--text);
+    }
+
+    .week-tab.active {
+        background: var(--surface-3);
+        color: var(--text);
+        box-shadow: inset 0 0 0 1px var(--border-light);
+    }
+
+    .week-tab.has-empty {
+        background: rgba(220, 38, 38, 0.18);
+        box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.5);
+    }
+
+    .week-tab.has-empty:hover {
+        background: rgba(220, 38, 38, 0.28);
+    }
+
+    .week-tab.has-empty.active {
+        background: #dc2626;
+        color: #fff;
+        box-shadow: inset 0 0 0 2px #fff;
+    }
+
+    .week-tab.has-empty.active .tab-empty-count, .week-tab.has-empty.active .tab-date {
+        color: #fff;
+    }
+
+    .week-tab .tab-label {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 15px;
+        letter-spacing: 0.03em;
+    }
+
+    .week-tab .tab-meta {
+        font-size: 9px;
+        opacity: 0.7;
+        display: flex;
+        gap: 3px;
+        align-items: center;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .week-tab .tab-date {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .week-tab .tab-empty-count {
+        display: block;
+        font-size: 9px;
+        font-weight: 700;
+        color: #fff;
+        opacity: 1;
+    }
+
+    .week-tab.no-empty .tab-empty-count {
+        color: var(--filled);
+    }
+
+    .legend {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+        font-size: 12px;
+        color: var(--text-dim);
+        align-items: center;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+    }
+
+    .legend-dot.empty {
+        background: #dc2626;
+        border: 1px solid #dc2626;
+    }
+
+    .legend-dot.filled {
+        background: var(--filled-bg);
+        border: 1px solid var(--filled);
+    }
+
+    .schedule-wrapper {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .week-info-bar {
+        padding: 12px 18px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .week-info-title {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 22px;
+        letter-spacing: 0.05em;
+    }
+
+    .week-info-sub {
+        font-size: 12px;
+        color: var(--text-dim);
+    }
+
+    .week-empty-badge {
+        background: #dc2626;
+        color: #fff;
+        border: 1px solid #dc2626;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .week-empty-badge.zero {
+        background: var(--filled-bg);
+        color: var(--filled);
+        border-color: var(--filled);
+    }
+
+    .table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    thead.date-header th {
+        background: var(--surface-2);
+        padding: 10px 4px;
+        text-align: center;
+        border-bottom: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        font-weight: normal;
+        width: calc((100% - 130px) / 7);
+    }
+
+    thead.date-header th:last-child {
+        border-right: none;
+    }
+
+    thead.date-header th.role-col {
+        width: 130px;
+        min-width: 130px;
+        text-align: left;
+        padding-left: 10px;
+        color: var(--text-dim);
+        font-family: 'Archivo', sans-serif;
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 800;
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: var(--surface-2);
+    }
+
+    tbody .role-label {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+    }
+
+    tr.group-header td {
+        position: sticky;
+        left: 0;
+    }
+
+    .date-weekday {
+        font-size: 10px;
+        color: var(--text-dim);
+        letter-spacing: 0.05em;
+        margin-bottom: 1px;
+    }
+
+    .date-num {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 16px;
+        letter-spacing: 0.02em;
+        color: var(--text);
+    }
+
+    thead.date-header th.weekend-sat .date-weekday, thead.date-header th.weekend-sat .date-num {
+        color: #60a5fa;
+    }
+
+    thead.date-header th.weekend-sun .date-weekday, thead.date-header th.weekend-sun .date-num {
+        color: #f87171;
+    }
+
+    thead.date-header th.today {
+        background: var(--accent);
+    }
+
+    thead.date-header th.today .date-weekday, thead.date-header th.today .date-num {
+        color: #000;
+    }
+
+    thead.date-header th.disabled {
+        background: #080808;
+    }
+
+    thead.date-header th.disabled .date-num, thead.date-header th.disabled .date-weekday {
+        color: #333;
+    }
+
+    thead.date-header th.has-empty {
+        background: rgba(220, 38, 38, 0.22);
+        position: relative;
+    }
+
+    thead.date-header th.has-empty .date-weekday, thead.date-header th.has-empty .date-num {
+        color: #fff;
+    }
+
+    thead.date-header th.has-empty::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #dc2626;
+    }
+
+    thead.date-header th.today.has-empty {
+        background: var(--accent);
+    }
+
+    thead.date-header th.today.has-empty .date-weekday, thead.date-header th.today.has-empty .date-num {
+        color: #000;
+    }
+
+    tbody td {
+        border-right: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        padding: 0;
+        height: 38px;
+    }
+
+    tbody td:last-child {
+        border-right: none;
+    }
+
+    .role-label {
+        padding: 0 8px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-dim);
+        background: var(--surface-2);
+        border-right: 1px solid var(--border) !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 130px;
+    }
+
+    .role-label.group-shuttle-player {
+        border-left: 3px solid #3b82f6;
+    }
+
+    .role-label.group-coach-player {
+        border-left: 3px solid #10b981;
+    }
+
+    .role-label.group-shuttle-hobby {
+        border-left: 3px solid #8b5cf6;
+    }
+
+    .role-label.group-coach-hobby {
+        border-left: 3px solid #f59e0b;
+    }
+
+    .role-label.group-shuttle-return {
+        border-left: 3px solid #ec4899;
+    }
+
+    tr.group-divider td {
+        background: #0c0c0c;
+        border: none;
+        height: 8px;
+        padding: 0;
+    }
+
+    tr.group-header td {
+        background: #0f0f0f;
+        color: var(--text-faint);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        font-weight: 700;
+        padding: 6px 16px;
+        height: auto;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .slot {
+        width: 100%;
+        height: 100%;
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        background: var(--empty-bg);
+        font-size: 11px;
+        font-weight: 600;
+        transition: all 0.12s ease;
+        text-align: center;
+        padding: 2px;
+        overflow: hidden;
+        word-break: keep-all;
+    }
+
+    .slot:hover {
+        background: var(--empty-hover);
+    }
+
+    .slot.filled {
+        background: var(--filled-bg);
+        color: var(--filled);
+    }
+
+    .slot.filled:hover {
+        background: rgba(16, 185, 129, 0.25);
+    }
+
+    .slot.empty::before {
+        content: '비어있음';
+        color: #fff;
+        font-weight: 700;
+        font-size: 11px;
+        opacity: 1;
+    }
+
+    .slot.empty:hover::before {
+        opacity: 1;
+    }
+
+    .slot.disabled {
+        background: #080808;
+        cursor: not-allowed;
+    }
+
+    .slot.disabled::before {
+        content: '';
+    }
+
+    .slot.pending {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 20px;
+    }
+
+    .modal-backdrop.open {
+        display: flex;
+    }
+
+    .modal {
+        background: var(--surface);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: var(--shadow);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal h3 {
+        font-family: 'Archivo', sans-serif;
+        font-size: 14px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 6px;
+    }
+
+    .modal .modal-subtitle {
+        font-size: 13px;
+        color: var(--text-dim);
+        margin-bottom: 18px;
+        line-height: 1.5;
+    }
+
+    .modal-coach-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .modal-coach-btn {
+        background: var(--surface-2);
+        border: 1px solid var(--border-light);
+        color: var(--text);
+        padding: 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.12s;
+    }
+
+    .modal-coach-btn:hover {
+        border-color: var(--accent);
+        background: var(--surface);
+    }
+
+    .modal-coach-btn.current {
+        background: var(--filled-bg);
+        border-color: var(--filled);
+        color: var(--filled);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 12px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+    }
+
+    .btn {
+        padding: 10px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.12s;
+    }
+
+    .btn-ghost {
+        background: transparent;
+        color: var(--text-dim);
+        border: 1px solid var(--border-light);
+    }
+
+    .btn-ghost:hover {
+        color: var(--text);
+    }
+
+    .btn-danger {
+        background: var(--empty-bg);
+        color: var(--empty);
+        border: 1px solid var(--empty);
+    }
+
+    .btn-danger:hover {
+        background: var(--empty);
+        color: #fff;
+    }
+
+    .btn-primary {
+        background: var(--accent);
+        color: #000;
+    }
+
+    .coach-editor-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+        align-items: center;
+    }
+
+    .coach-editor-row label {
+        width: 58px;
+        font-size: 12px;
+        color: var(--text-dim);
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .coach-editor-row input {
+        flex: 1;
+        background: var(--surface-2);
+        border: 1px solid var(--border-light);
+        color: var(--text);
+        padding: 8px 10px;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 13px;
+        min-width: 0;
+    }
+
+    .coach-editor-row input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .reset-confirm-modal {
+        max-width: 360px;
+    }
+
+    .reset-confirm-modal .warn-icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+    }
+
+    .reset-confirm-modal p {
+        font-size: 13px;
+        color: var(--text-dim);
+        line-height: 1.6;
+        margin-bottom: 8px;
+    }
+
+    .reset-confirm-modal strong {
+        color: var(--accent);
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: var(--surface);
+        color: var(--text);
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: 1px solid var(--border-light);
+        box-shadow: var(--shadow);
+        font-size: 13px;
+        font-weight: 500;
+        transition: transform 0.3s ease;
+        z-index: 200;
+        max-width: 90%;
+        text-align: center;
+    }
+
+    .toast.show {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.error {
+        border-color: var(--empty);
+        color: var(--empty);
+    }
+
+    .config-warning {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid var(--empty);
+        color: var(--empty);
+        padding: 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .config-warning code {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+    }
+
+    .multi-select-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 14px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+
+    .multi-select-btn {
+        background: transparent;
+        border: 1px solid var(--border-light);
+        color: var(--text-dim);
+        padding: 7px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.15s;
+        flex-shrink: 0;
+    }
+
+    .multi-select-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .multi-select-btn.active {
+        background: var(--accent);
+        color: #000;
+        border-color: var(--accent);
+    }
+
+    .multi-select-count {
+        font-size: 12px;
+        color: var(--accent);
+        font-weight: 700;
+        display: none;
+    }
+
+    .multi-select-count.show {
+        display: inline;
+    }
+
+    .multi-apply-btn {
+        background: var(--accent);
+        color: #000;
+        border: none;
+        padding: 7px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        transition: all 0.15s;
+        display: none;
+        flex-shrink: 0;
+    }
+
+    .multi-apply-btn.show {
+        display: inline-block;
+    }
+
+    .multi-apply-btn:hover {
+        opacity: 0.85;
+    }
+
+    .multi-cancel-btn {
+        background: transparent;
+        color: var(--text-dim);
+        border: 1px solid var(--border-light);
+        padding: 7px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.15s;
+        display: none;
+        flex-shrink: 0;
+    }
+
+    .multi-cancel-btn.show {
+        display: inline-block;
+    }
+
+    .copy-prev-btn {
+        background: transparent;
+        border: 1px solid var(--border-light);
+        color: var(--text-dim);
+        padding: 7px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.15s;
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    .copy-prev-btn:hover {
+        border-color: #60a5fa;
+        color: #60a5fa;
+    }
+
+    .slot.multi-selected {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+        background: rgba(250, 204, 21, 0.15) !important;
+    }
+
+    .slot.multi-selected::after {
+        content: '✓';
+        color: var(--accent);
+        font-size: 14px;
+        font-weight: 900;
+    }
+
+    .slot.multi-selected::before {
+        display: none;
+    }
+
+    .copy-modal {
+        max-width: 520px;
+    }
+
+    .copy-preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+        margin: 12px 0;
+        max-height: 320px;
+        overflow-y: auto;
+        display: block;
+    }
+
+    .copy-preview-table th {
+        background: var(--surface-2);
+        color: var(--text-dim);
+        padding: 6px 8px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        font-weight: 700;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        position: sticky;
+        top: 0;
+    }
+
+    .copy-preview-table td {
+        padding: 5px 8px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-dim);
+    }
+
+    .copy-preview-table td.coach-name {
+        font-weight: 600;
+    }
+
+    .copy-preview-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .copy-preview-empty {
+        text-align: center;
+        color: var(--text-faint);
+        padding: 20px;
+        font-size: 13px;
+    }/* 코치 색상 0~11 (12명) */
+
+    .coach-color-0 {
+        --cc: #ef4444;
+        --cc-bg: rgba(239, 68, 68, 0.15);
+        --cc-border: rgba(239, 68, 68, 0.5);
+    }
+
+    .coach-color-1 {
+        --cc: #f97316;
+        --cc-bg: rgba(249, 115, 22, 0.15);
+        --cc-border: rgba(249, 115, 22, 0.5);
+    }
+
+    .coach-color-2 {
+        --cc: #facc15;
+        --cc-bg: rgba(250, 204, 21, 0.15);
+        --cc-border: rgba(250, 204, 21, 0.5);
+    }
+
+    .coach-color-3 {
+        --cc: #22c55e;
+        --cc-bg: rgba(34, 197, 94, 0.15);
+        --cc-border: rgba(34, 197, 94, 0.5);
+    }
+
+    .coach-color-4 {
+        --cc: #3b82f6;
+        --cc-bg: rgba(59, 130, 246, 0.15);
+        --cc-border: rgba(59, 130, 246, 0.5);
+    }
+
+    .coach-color-5 {
+        --cc: #6366f1;
+        --cc-bg: rgba(99, 102, 241, 0.15);
+        --cc-border: rgba(99, 102, 241, 0.5);
+    }
+
+    .coach-color-6 {
+        --cc: #a855f8;
+        --cc-bg: rgba(168, 85, 248, 0.15);
+        --cc-border: rgba(168, 85, 248, 0.5);
+    }
+
+    .coach-color-7 {
+        --cc: #f1f5f9;
+        --cc-bg: rgba(241, 245, 249, 0.12);
+        --cc-border: rgba(241, 245, 249, 0.4);
+    }
+
+    .coach-color-8 {
+        --cc: #06b6d4;
+        --cc-bg: rgba(6, 182, 212, 0.15);
+        --cc-border: rgba(6, 182, 212, 0.5);
+    }
+
+    .coach-color-9 {
+        --cc: #f43f5e;
+        --cc-bg: rgba(244, 63, 94, 0.15);
+        --cc-border: rgba(244, 63, 94, 0.5);
+    }
+
+    .coach-color-10 {
+        --cc: #84cc16;
+        --cc-bg: rgba(132, 204, 22, 0.15);
+        --cc-border: rgba(132, 204, 22, 0.5);
+    }
+
+    .coach-color-11 {
+        --cc: #fb923c;
+        --cc-bg: rgba(251, 146, 60, 0.15);
+        --cc-border: rgba(251, 146, 60, 0.5);
+    }
+
+    .coach-chip.colored {
+        border-color: var(--cc-border);
+    }
+
+    .coach-chip.colored:hover {
+        border-color: var(--cc);
+    }
+
+    .coach-chip.colored .coach-name-text {
+        color: var(--cc);
+    }
+
+    .coach-chip.colored.active {
+        background: var(--cc-bg);
+        border-color: var(--cc);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--cc) 25%, transparent);
+        color: var(--cc);
+    }
+
+    .coach-chip.colored.active .count {
+        color: var(--cc);
+        opacity: 0.8;
+    }
+
+    .slot.colored {
+        background: var(--cc-bg);
+        color: var(--cc);
+        border-left: 3px solid var(--cc);
+    }
+
+    .slot.colored:hover {
+        filter: brightness(1.15);
+    }
+
+    .modal-coach-btn.colored {
+        border-color: var(--cc-border);
+        color: var(--cc);
+    }
+
+    .modal-coach-btn.colored:hover {
+        background: var(--cc-bg);
+        border-color: var(--cc);
+    }
+
+    .modal-coach-btn.colored.current {
+        background: var(--cc-bg);
+        border-color: var(--cc);
+    }
+
+    .legend-coach-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        background: var(--cc);
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+        body {
+            padding: 10px 6px 60px;
+        }
+
+        header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .stats {
+            width: 100%;
+            justify-content: space-around;
+            gap: 12px;
+        }
+
+        .coach-list {
+            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+        }
+
+        .week-tab .tab-label {
+            font-size: 13px;
+        }
+
+        .month-nav {
+            padding: 6px 10px;
+        }
+
+        thead.date-header th.role-col {
+            width: 90px;
+            min-width: 90px;
+            font-size: 8px;
+            padding-left: 6px;
+        }
+
+        thead.date-header th {
+            padding: 6px 2px;
+            width: calc((100% - 90px) / 7);
+        }
+
+        .date-weekday {
+            font-size: 9px;
+        }
+
+        .date-num {
+            font-size: 13px;
+        }
+
+        .role-label {
+            font-size: 10px;
+            padding: 0 4px;
+            max-width: 90px;
+        }
+
+        tbody td {
+            height: 34px;
+        }
+
+        .slot {
+            min-height: 34px;
+            font-size: 10px;
+            padding: 1px;
+        }
+
+        .slot.empty::before {
+            font-size: 9px;
+            content: '—';
+            color: #fff;
+        }
+
+        tr.group-header td {
+            font-size: 9px;
+            padding: 4px 8px;
+        }
+
+        tr.group-divider td {
+            height: 5px;
+        }
+    }
+    </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <div class="title-block">
-      <h1 id="pageTitle">— <span class="accent">코치 스케줄</span></h1>
-      <div class="subtitle">KIMKWANGRIM BASEBALL SCHOOL
-        <span class="sync-status"><span class="sync-dot" id="syncDot"></span><span id="syncText">대기 중</span></span>
-      </div>
+    <div class="container">
+        <header>
+            <div class="title-block">
+                <h1 id="pageTitle">
+                    — 
+                    <span class="accent">코치 스케줄</span>
+                </h1>
+                <div class="subtitle">
+                    KIMKWANGRIM BASEBALL SCHOOL
+                            
+                    <span class="sync-status">
+                        <span class="sync-dot" id="syncDot"></span>
+                        <span id="syncText">대기 중</span>
+                    </span>
+                </div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">배정</div>
+                    <div class="stat-value filled-stat" id="statFilled">—</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">미배정</div>
+                    <div class="stat-value empty-stat" id="statEmpty">—</div>
+                </div>
+            </div>
+        </header>
+        <div id="configWarning"></div>
+        <div class="month-nav">
+            <button class="month-nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+            <div class="month-nav-title" id="monthNavTitle">—</div>
+            <button class="month-nav-btn" onclick="changeMonth(1)">&#8250;</button>
+            <button class="month-nav-today" id="todayBtn" onclick="goToCurrentMonth()">이번 달</button>
+        </div>
+        <div class="month-reset-bar" id="monthResetBar">
+            <div class="reset-info">
+                <strong id="resetBarMonth">—</strong>
+                 새 달이 시작됐습니다. 배정표를 초기화하시겠습니까?
+            </div>
+            <button class="reset-btn" onclick="openResetConfirm()">이번 달 새로 시작하기</button>
+        </div>
+        <div class="coach-panel">
+            <div class="panel-header">
+                <div class="panel-title">1. 본인 선택</div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <span class="panel-hint">이름 선택 → 빈 칸 탭</span>
+                    <button class="edit-coach-btn" onclick="openCoachEditor()">이름 수정</button>
+                </div>
+            </div>
+            <div class="coach-list" id="coachList"></div>
+        </div>
+        <div class="multi-select-bar">
+            <button class="multi-select-btn" id="multiSelectBtn" onclick="toggleMultiSelect()">☑ 다중 선택</button>
+            <span class="multi-select-count" id="multiSelectCount">0개 선택</span>
+            <button class="multi-apply-btn" id="multiApplyBtn" onclick="openMultiAssignModal()">코치 배정</button>
+            <button class="multi-cancel-btn" id="multiCancelBtn" onclick="cancelMultiSelect()">선택 취소</button>
+            <button class="copy-prev-btn" onclick="openCopyPrevModal()">↩ 이전 달에서 복사</button>
+        </div>
+        <div class="week-nav" id="weekNav"></div>
+        <div class="legend" id="legend">
+            <span class="legend-item">
+                <span class="legend-dot empty"></span>
+                비어있음
+            </span>
+            <span class="legend-item" style="margin-left:auto;color:var(--text-faint);font-size:11px;">배정된 칸을 다시 탭하면 수정/삭제</span>
+        </div>
+        <div class="schedule-wrapper" id="scheduleWrapper">
+            <div style="padding:40px;text-align:center;color:var(--text-dim);">불러오는 중...</div>
+        </div>
     </div>
-    <div class="stats">
-      <div class="stat"><div class="stat-label">배정</div><div class="stat-value filled-stat" id="statFilled">—</div></div>
-      <div class="stat"><div class="stat-label">미배정</div><div class="stat-value empty-stat" id="statEmpty">—</div></div>
+
+    <!-- 다중 배정 모달 -->
+    <div class="modal-backdrop" id="multiAssignModal">
+        <div class="modal">
+            <h3>일괄 배정</h3>
+            <div class="modal-subtitle" id="multiAssignSubtitle"></div>
+            <div class="modal-coach-grid" id="multiAssignCoachGrid"></div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeMultiAssignModal()">취소</button>
+            </div>
+        </div>
     </div>
-  </header>
-  <div id="configWarning"></div>
-  <div class="month-nav">
-    <button class="month-nav-btn" onclick="changeMonth(-1)">&#8249;</button>
-    <div class="month-nav-title" id="monthNavTitle">—</div>
-    <button class="month-nav-btn" onclick="changeMonth(1)">&#8250;</button>
-    <button class="month-nav-today" id="todayBtn" onclick="goToCurrentMonth()">이번 달</button>
-  </div>
-  <div class="month-reset-bar" id="monthResetBar">
-    <div class="reset-info"><strong id="resetBarMonth">—</strong> 새 달이 시작됐습니다. 배정표를 초기화하시겠습니까?</div>
-    <button class="reset-btn" onclick="openResetConfirm()">이번 달 새로 시작하기</button>
-  </div>
-  <div class="coach-panel">
-    <div class="panel-header">
-      <div class="panel-title">1. 본인 선택</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span class="panel-hint">이름 선택 → 빈 칸 탭</span>
-        <button class="edit-coach-btn" onclick="openCoachEditor()">이름 수정</button>
-      </div>
+    <!-- 이전 달 복사 모달 -->
+    <div class="modal-backdrop" id="copyPrevModal">
+        <div class="modal copy-modal">
+            <h3>이전 달에서 복사</h3>
+            <div class="modal-subtitle" id="copyPrevSubtitle"></div>
+            <div id="copyPrevContent"></div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeCopyPrevModal()">취소</button>
+                <button class="btn btn-primary" id="copyPrevConfirmBtn" onclick="confirmCopyPrev()">이대로 적용</button>
+            </div>
+        </div>
     </div>
-    <div class="coach-list" id="coachList"></div>
-  </div>
-  <div class="multi-select-bar">
-    <button class="multi-select-btn" id="multiSelectBtn" onclick="toggleMultiSelect()">☑ 다중 선택</button>
-    <span class="multi-select-count" id="multiSelectCount">0개 선택</span>
-    <button class="multi-apply-btn" id="multiApplyBtn" onclick="openMultiAssignModal()">코치 배정</button>
-    <button class="multi-cancel-btn" id="multiCancelBtn" onclick="cancelMultiSelect()">선택 취소</button>
-    <button class="copy-prev-btn" onclick="openCopyPrevModal()">↩ 이전 달에서 복사</button>
-  </div>
-  <div class="week-nav" id="weekNav"></div>
-  <div class="legend" id="legend">
-    <span class="legend-item"><span class="legend-dot empty"></span>비어있음</span>
-    <span class="legend-item" style="margin-left:auto;color:var(--text-faint);font-size:11px;">배정된 칸을 다시 탭하면 수정/삭제</span>
-  </div>
-  <div class="schedule-wrapper" id="scheduleWrapper">
-    <div style="padding:40px;text-align:center;color:var(--text-dim);">불러오는 중...</div>
-  </div>
-</div>
-
-<!-- 다중 배정 모달 -->
-<div class="modal-backdrop" id="multiAssignModal">
-  <div class="modal">
-    <h3>일괄 배정</h3>
-    <div class="modal-subtitle" id="multiAssignSubtitle"></div>
-    <div class="modal-coach-grid" id="multiAssignCoachGrid"></div>
-    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeMultiAssignModal()">취소</button></div>
-  </div>
-</div>
-<!-- 이전 달 복사 모달 -->
-<div class="modal-backdrop" id="copyPrevModal">
-  <div class="modal copy-modal">
-    <h3>이전 달에서 복사</h3>
-    <div class="modal-subtitle" id="copyPrevSubtitle"></div>
-    <div id="copyPrevContent"></div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeCopyPrevModal()">취소</button>
-      <button class="btn btn-primary" id="copyPrevConfirmBtn" onclick="confirmCopyPrev()">이대로 적용</button>
+    <!-- 슬롯 배정 모달 -->
+    <div class="modal-backdrop" id="slotModal">
+        <div class="modal">
+            <h3 id="modalTitle">배정</h3>
+            <div class="modal-subtitle" id="modalSubtitle"></div>
+            <div class="modal-coach-grid" id="modalCoachGrid"></div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeSlotModal()">취소</button>
+                <button class="btn btn-danger" id="modalClearBtn" onclick="clearSlot()" style="display:none;">비우기</button>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-<!-- 슬롯 배정 모달 -->
-<div class="modal-backdrop" id="slotModal">
-  <div class="modal">
-    <h3 id="modalTitle">배정</h3>
-    <div class="modal-subtitle" id="modalSubtitle"></div>
-    <div class="modal-coach-grid" id="modalCoachGrid"></div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeSlotModal()">취소</button>
-      <button class="btn btn-danger" id="modalClearBtn" onclick="clearSlot()" style="display:none;">비우기</button>
+    <!-- 코치 이름 편집 모달 — 12명 -->
+    <div class="modal-backdrop" id="coachModal">
+        <div class="modal">
+            <h3>담당자 이름 설정</h3>
+            <div class="modal-subtitle">12명 담당자 이름을 입력하세요 (모든 코치 공용)</div>
+            <div id="coachEditorList"></div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeCoachEditor()">취소</button>
+                <button class="btn btn-primary" id="saveCoachesBtn" onclick="saveCoachNames()">저장</button>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-<!-- 코치 이름 편집 모달 — 12명 -->
-<div class="modal-backdrop" id="coachModal">
-  <div class="modal">
-    <h3>담당자 이름 설정</h3>
-    <div class="modal-subtitle">12명 담당자 이름을 입력하세요 (모든 코치 공용)</div>
-    <div id="coachEditorList"></div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeCoachEditor()">취소</button>
-      <button class="btn btn-primary" id="saveCoachesBtn" onclick="saveCoachNames()">저장</button>
+    <!-- 월 초기화 확인 모달 -->
+    <div class="modal-backdrop" id="resetModal">
+        <div class="modal reset-confirm-modal">
+            <div class="warn-icon">⚠️</div>
+            <h3>배정 초기화</h3>
+            <p>
+                <strong id="resetModalMonth">—</strong>
+                의 모든 배정 데이터를 초기화합니다.
+            </p>
+            <p>
+                이전 달(
+                <span id="resetModalPrevMonth">—</span>
+                )의 데이터는 그대로 보존됩니다.
+            </p>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeResetModal()">취소</button>
+                <button class="btn btn-danger" id="resetConfirmBtn" onclick="confirmReset()">초기화 실행</button>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-<!-- 월 초기화 확인 모달 -->
-<div class="modal-backdrop" id="resetModal">
-  <div class="modal reset-confirm-modal">
-    <div class="warn-icon">⚠️</div>
-    <h3>배정 초기화</h3>
-    <p><strong id="resetModalMonth">—</strong>의 모든 배정 데이터를 초기화합니다.</p>
-    <p>이전 달(<span id="resetModalPrevMonth">—</span>)의 데이터는 그대로 보존됩니다.</p>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeResetModal()">취소</button>
-      <button class="btn btn-danger" id="resetConfirmBtn" onclick="confirmReset()">초기화 실행</button>
-    </div>
-  </div>
-</div>
-<div class="toast" id="toast"></div>
+    <div class="toast" id="toast"></div>
 
-<script>
-/* =========================================================================
-   ⚙️ Apps Script 웹앱 URL — 본인 URL로 교체하세요!
-   ========================================================================= */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHC3QU_GXunIPChpsGjarXFN0rbsKsd0Dq6riUhdyfiBK0OQIDlfAgLCdOhY4FVEUlVg/exec';
+    <script>
+    /* =========================================================================
+       ⚙️ Apps Script 웹앱 URL — 본인 URL로 교체하세요!
+       ========================================================================= */
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOZqbGUxrJd2Dc35eziFS2alRU7oUupbvhP3Lrts_df0gNhsYW7c-Z_rvIOGIN7dzq1Q/exec';
 
-const COACH_COUNT = 12;
+    const COACH_COUNT = 12;
 
-const ROLE_GROUPS = [
-  { name:'선수반 셔틀 (등원)', group:'shuttle-player', roles:[
-    { id:'shuttle_pangyo_player_in', label:'판교 선수 셔틀 등원', short:'판교등원' },
-    { id:'shuttle_jeongja_player_in', label:'정자 선수 셔틀 등원', short:'정자등원' },
-    { id:'shuttle_yatap1_player_in', label:'야탑1 선수 셔틀 등원', short:'야탑1등원' },
-    { id:'shuttle_yatap2_player_in', label:'야탑2 선수 셔틀 등원', short:'야탑2등원' },
-  ]},
-  { name:'선수반 코치', group:'coach-player', roles:[
-    { id:'yukseong_coach_1', label:'육성반 코치1', short:'육성1' },
-    { id:'yukseong_coach_2', label:'육성반 코치2', short:'육성2' },
-    { id:'seonsu_coach_1', label:'선수반 코치1', short:'선수1' },
-    { id:'seonsu_coach_2', label:'선수반 코치2', short:'선수2' },
-    { id:'seonsu_coach_3', label:'선수반 코치3', short:'선수3' },
-  ]},
-  { name:'취미반 셔틀 (등원)', group:'shuttle-hobby', roles:[
-    { id:'shuttle_pangyo_hobby_in', label:'판교 취미 셔틀 등원', short:'판교취미↑' },
-    { id:'shuttle_jeongja_hobby_in', label:'정자 취미 셔틀 등원', short:'정자취미↑' },
-    { id:'shuttle_yatap_hobby_in', label:'야탑 취미 셔틀 등원', short:'야탑취미↑' },
-  ]},
-  { name:'취미반 코치', group:'coach-hobby', roles:[
-    { id:'chwimi_coach_1', label:'취미반 코치1', short:'취미1' },
-    { id:'chwimi_coach_2', label:'취미반 코치2', short:'취미2' },
-  ]},
-  { name:'취미반 셔틀 (하원)', group:'shuttle-return', roles:[
-    { id:'shuttle_pangyo_hobby_out', label:'판교 취미 셔틀 하원', short:'판교취미↓' },
-    { id:'shuttle_jeongja_hobby_out', label:'정자 취미 셔틀 하원', short:'정자취미↓' },
-    { id:'shuttle_yatap_hobby_out', label:'야탑 취미 셔틀 하원', short:'야탑취미↓' },
-  ]},
-];
+    const ROLE_GROUPS = [
+    {
+        name: '선수반 셔틀 (등원)',
+        group: 'shuttle-player',
+        roles: [
+        {
+            id: 'shuttle_pangyo_player_in',
+            label: '판교 선수 셔틀 등원',
+            short: '판교등원'
+        },
+        {
+            id: 'shuttle_jeongja_player_in',
+            label: '정자 선수 셔틀 등원',
+            short: '정자등원'
+        },
+        {
+            id: 'shuttle_yatap1_player_in',
+            label: '야탑1 선수 셔틀 등원',
+            short: '야탑1등원'
+        },
+        {
+            id: 'shuttle_yatap2_player_in',
+            label: '야탑2 선수 셔틀 등원',
+            short: '야탑2등원'
+        },
+        ]
+    },
+    {
+        name: '선수반 코치',
+        group: 'coach-player',
+        roles: [
+        {
+            id: 'yukseong_coach_1',
+            label: '육성반 코치1',
+            short: '육성1'
+        },
+        {
+            id: 'yukseong_coach_2',
+            label: '육성반 코치2',
+            short: '육성2'
+        },
+        {
+            id: 'seonsu_coach_1',
+            label: '선수반 코치1',
+            short: '선수1'
+        },
+        {
+            id: 'seonsu_coach_2',
+            label: '선수반 코치2',
+            short: '선수2'
+        },
+        {
+            id: 'seonsu_coach_3',
+            label: '선수반 코치3',
+            short: '선수3'
+        },
+        ]
+    },
+    {
+        name: '취미반 셔틀 (등원)',
+        group: 'shuttle-hobby',
+        roles: [
+        {
+            id: 'shuttle_pangyo_hobby_in',
+            label: '판교 취미 셔틀 등원',
+            short: '판교취미↑'
+        },
+        {
+            id: 'shuttle_jeongja_hobby_in',
+            label: '정자 취미 셔틀 등원',
+            short: '정자취미↑'
+        },
+        {
+            id: 'shuttle_yatap_hobby_in',
+            label: '야탑 취미 셔틀 등원',
+            short: '야탑취미↑'
+        },
+        ]
+    },
+    {
+        name: '취미반 코치',
+        group: 'coach-hobby',
+        roles: [
+        {
+            id: 'chwimi_coach_1',
+            label: '취미반 코치1',
+            short: '취미1'
+        },
+        {
+            id: 'chwimi_coach_2',
+            label: '취미반 코치2',
+            short: '취미2'
+        },
+        ]
+    },
+    {
+        name: '취미반 셔틀 (하원)',
+        group: 'shuttle-return',
+        roles: [
+        {
+            id: 'shuttle_pangyo_hobby_out',
+            label: '판교 취미 셔틀 하원',
+            short: '판교취미↓'
+        },
+        {
+            id: 'shuttle_jeongja_hobby_out',
+            label: '정자 취미 셔틀 하원',
+            short: '정자취미↓'
+        },
+        {
+            id: 'shuttle_yatap_hobby_out',
+            label: '야탑 취미 셔틀 하원',
+            short: '야탑취미↓'
+        },
+        ]
+    },
+    ];
 
-const ROLES = ROLE_GROUPS.flatMap(g => g.roles.map(r => ({ ...r, group: g.group })));
+    const ROLES = ROLE_GROUPS.flatMap(g => g.roles.map(r => ({
+        ...r,
+        group: g.group
+    })));
 
-const DEFAULT_COACHES = Array.from({length: COACH_COUNT}, (_, i) => `담당자${i+1}`);
-const WEEKDAY_HEADERS = ['월','화','수','목','금','토','일'];
+    const DEFAULT_COACHES = Array.from({
+        length: COACH_COUNT
+    }, (_, i) => `담당자${i + 1}`);
+    const WEEKDAY_HEADERS = ['월', '화', '수', '목', '금', '토', '일'];
 
-const _today = new Date();
-let YEAR = _today.getFullYear(), MONTH = _today.getMonth() + 1;
-let WEEKS = [], selectedCoach = null, coaches = [...DEFAULT_COACHES], assignments = {};
-let currentEditSlot = null, activeWeekIdx = 0, pendingKeys = new Set();
-let isFirstLoad = true, isMultiSelectMode = false, multiSelectedKeys = new Set(), prevMonthAssignments = {};
-const STORAGE_KEY_ME = 'kbs_my_coach_name';
+    const _today = new Date();
+    let YEAR = _today.getFullYear(),
+        MONTH = _today.getMonth() + 1;
+    let WEEKS = [],
+        selectedCoach = null,
+        coaches = [...DEFAULT_COACHES],
+        assignments = {};
+    let currentEditSlot = null,
+        activeWeekIdx = 0,
+        pendingKeys = new Set();
+    let isFirstLoad = true,
+        isMultiSelectMode = false,
+        multiSelectedKeys = new Set(),
+        prevMonthAssignments = {};
+    const STORAGE_KEY_ME = 'kbs_my_coach_name';
 
-function buildWeeks(year, month) {
-  const firstDay = new Date(year, month-1, 1), lastDay = new Date(year, month, 0);
-  const totalDays = lastDay.getDate(), firstWeekday = (firstDay.getDay()+6)%7;
-  const weeks = []; let current = [];
-  for (let i=0; i<firstWeekday; i++) current.push(null);
-  for (let d=1; d<=totalDays; d++) {
-    current.push(d);
-    if (current.length===7) { weeks.push(current); current=[]; }
-  }
-  if (current.length>0) { while(current.length<7) current.push(null); weeks.push(current); }
-  return weeks;
-}
-
-function getMonthKey(y,m) { return `${y}-${String(m).padStart(2,'0')}`; }
-function getMonthLabel(y,m) {
-  return `${y}년 ${['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'][m-1]}`;
-}
-function changeMonth(d) {
-  MONTH+=d; if(MONTH>12){MONTH=1;YEAR++;} if(MONTH<1){MONTH=12;YEAR--;} initMonth();
-}
-function goToCurrentMonth() { const n=new Date(); YEAR=n.getFullYear(); MONTH=n.getMonth()+1; initMonth(); }
-function isCurrentMonth() { const n=new Date(); return YEAR===n.getFullYear()&&MONTH===n.getMonth()+1; }
-
-async function initMonth() {
-  WEEKS=buildWeeks(YEAR,MONTH); activeWeekIdx=detectCurrentWeek(); updateMonthUI(); assignments={};
-  document.getElementById('scheduleWrapper').innerHTML='<div style="padding:40px;text-align:center;color:var(--text-dim);">불러오는 중...</div>';
-  await loadData(); renderAll();
-}
-
-function updateMonthUI() {
-  const KM=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-  document.getElementById('pageTitle').innerHTML=`${YEAR}년 ${KM[MONTH-1]} <span class="accent">코치 스케줄</span>`;
-  document.getElementById('monthNavTitle').textContent=getMonthLabel(YEAR,MONTH);
-  document.getElementById('todayBtn').classList.toggle('is-current',isCurrentMonth());
-  checkNewMonthBanner();
-}
-
-function checkNewMonthBanner() {
-  const bar=document.getElementById('monthResetBar');
-  const hasData=Object.keys(assignments).some(k=>assignments[k]);
-  if(isCurrentMonth()&&!hasData&&!isFirstLoad) { document.getElementById('resetBarMonth').textContent=getMonthLabel(YEAR,MONTH); bar.classList.add('show'); }
-  else bar.classList.remove('show');
-}
-
-function setSyncStatus(s,t) { document.getElementById('syncDot').className='sync-dot '+(s||''); document.getElementById('syncText').textContent=t||''; }
-
-async function apiGet() {
-  if(APPS_SCRIPT_URL.includes('YOUR_APPS_SCRIPT_URL_HERE')) throw new Error('URL 미설정');
-  const res=await fetch(`${APPS_SCRIPT_URL}?month=${getMonthKey(YEAR,MONTH)}&t=${Date.now()}`);
-  if(!res.ok) throw new Error('네트워크 오류: '+res.status);
-  const json=await res.json(); if(!json.success) throw new Error(json.error||'서버 오류');
-  return json.data;
-}
-
-async function apiPost(payload) {
-  if(APPS_SCRIPT_URL.includes('YOUR_APPS_SCRIPT_URL_HERE')) throw new Error('URL 미설정');
-  payload.month=getMonthKey(YEAR,MONTH);
-  const res=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),redirect:'follow'});
-  if(!res.ok) throw new Error('네트워크 오류: '+res.status);
-  const json=await res.json(); if(!json.success) throw new Error(json.error||'서버 오류');
-  return json.data;
-}
-
-async function loadData() {
-  setSyncStatus('syncing','동기화 중...');
-  try {
-    const data=await apiGet(); assignments=data.assignments||{};
-    if(Array.isArray(data.coaches)&&data.coaches.length>0){
-      const loaded=data.coaches.slice(0,COACH_COUNT);
-      while(loaded.length<COACH_COUNT) loaded.push(`담당자${loaded.length+1}`);
-      coaches=loaded;
-    }
-    setSyncStatus('connected','연결됨'); return true;
-  } catch(e) { console.error('Load failed:',e); setSyncStatus('error','연결 실패'); return false; }
-}
-
-function loadMyCoach() { try{const v=localStorage.getItem(STORAGE_KEY_ME);if(v)selectedCoach=v;}catch(e){} }
-function saveMyCoach() { try{if(selectedCoach)localStorage.setItem(STORAGE_KEY_ME,selectedCoach);else localStorage.removeItem(STORAGE_KEY_ME);}catch(e){} }
-
-function getWeekEmptyCount(wi) {
-  const week=WEEKS[wi]; let empty=0;
-  week.forEach(d=>{if(d===null)return;ROLES.forEach(r=>{if(!assignments[`${d}_${r.id}`])empty++;});});
-  return empty;
-}
-function getWeekRange(wi) {
-  const days=WEEKS[wi].filter(d=>d!==null);
-  return days.length===0?'':`${MONTH}/${days[0]} ~ ${MONTH}/${days[days.length-1]}`;
-}
-function detectCurrentWeek() {
-  if(!isCurrentMonth())return 0; const day=new Date().getDate();
-  for(let i=0;i<WEEKS.length;i++){if(WEEKS[i].includes(day))return i;} return 0;
-}
-
-function getCoachColorIdx(name) { const i=coaches.indexOf(name); return i>=0?i%COACH_COUNT:-1; }
-function coachColorClass(name) { const i=getCoachColorIdx(name); return i>=0?`colored coach-color-${i}`:''; }
-
-function showConfigWarning() {
-  document.getElementById('configWarning').innerHTML=`<div class="config-warning"><strong>⚠️ 설정 필요</strong><br>HTML 파일 안의 <code>APPS_SCRIPT_URL</code> 값을 Google Apps Script 웹앱 URL로 교체해야 합니다.</div>`;
-}
-
-function renderCoachList() {
-  const list=document.getElementById('coachList');
-  const counts={}; coaches.forEach(c=>counts[c]=0);
-  Object.values(assignments).forEach(n=>{if(counts[n]!==undefined)counts[n]++;});
-  list.innerHTML=coaches.map((name,idx)=>`
-    <div class="coach-chip ${coachColorClass(name)} ${selectedCoach===name?'active':''}" onclick="selectCoach('${escapeAttr(name)}')">
-      <span class="coach-name-text">${escapeHtml(name)}</span>
-      <span class="count">${counts[name]||0}건</span>
-    </div>`).join('');
-}
-
-function renderWeekTabs() {
-  document.getElementById('weekNav').innerHTML=WEEKS.map((week,idx)=>{
-    const ec=getWeekEmptyCount(idx),rng=getWeekRange(idx),ne=ec===0;
-    return `<button class="week-tab ${idx===activeWeekIdx?'active':''} ${ne?'no-empty':''}" onclick="setActiveWeek(${idx})">
-      <span class="tab-label">WEEK ${idx+1}</span>
-      <span class="tab-meta"><span class="tab-date">${rng}</span></span>
-      <span class="tab-empty-count">${ne?'✓':`미배정 ${ec}`}</span>
-    </button>`;
-  }).join('');
-}
-
-function renderSchedule() {
-  const wrapper=document.getElementById('scheduleWrapper'), week=WEEKS[activeWeekIdx];
-  const todayDate=isCurrentMonth()?new Date().getDate():-1, ec=getWeekEmptyCount(activeWeekIdx);
-  let html=`<div class="week-info-bar"><div><div class="week-info-title">WEEK ${activeWeekIdx+1}</div><div class="week-info-sub">${getWeekRange(activeWeekIdx)}</div></div>
-    <div class="week-empty-badge ${ec===0?'zero':''}">${ec===0?'✓ 모든 자리 배정 완료':`미배정 ${ec}`}</div></div>`;
-  html+='<div class="table-scroll"><table><thead class="date-header"><tr><th class="role-col">역할 / ROLE</th>';
-  week.forEach((d,di)=>{
-    let cls=d===null?'disabled':di===5?'weekend-sat':di===6?'weekend-sun':d===todayDate?'today':'';
-    html+=`<th class="${cls}"><div class="date-weekday">${WEEKDAY_HEADERS[di]}</div><div class="date-num">${d?`${MONTH}/${d}`:'—'}</div></th>`;
-  });
-  html+='</tr></thead><tbody>';
-  ROLE_GROUPS.forEach((g,gi)=>{
-    if(gi>0) html+='<tr class="group-divider"><td colspan="8"></td></tr>';
-    html+=`<tr class="group-header"><td colspan="8">${g.name}</td></tr>`;
-    g.roles.forEach(role=>{
-      html+='<tr>';
-      html+=`<td class="role-label group-${g.group}" title="${role.label}">${window.innerWidth<=768&&role.short?escapeHtml(role.short):escapeHtml(role.label)}</td>`;
-      week.forEach(d=>{
-        if(d===null){html+='<td><div class="slot disabled"></div></td>';return;}
-        const key=`${d}_${role.id}`,val=assignments[key],pc=pendingKeys.has(key)?' pending':'';
-        if(val){html+=`<td><div class="slot filled ${coachColorClass(val)}${pc}" onclick="openSlotModal(${d},'${role.id}')">${escapeHtml(val)}</div></td>`;}
-        else{
-          const sc=multiSelectedKeys.has(`${d}_${role.id}`)?' multi-selected':'';
-          html+=isMultiSelectMode
-            ?`<td><div class="slot empty${pc}${sc}" onclick="toggleSlotSelect(${d},'${role.id}')"></div></td>`
-            :`<td><div class="slot empty${pc}" onclick="openSlotModal(${d},'${role.id}')"></div></td>`;
+    function buildWeeks(year, month) {
+        const firstDay = new Date(year, month - 1, 1),
+            lastDay = new Date(year, month, 0);
+        const totalDays = lastDay.getDate(),
+            firstWeekday = (firstDay.getDay() + 6) % 7;
+        const weeks = [];
+        let current = [];
+        for (let i = 0; i < firstWeekday; i++)
+            current.push(null);
+        for (let d = 1; d <= totalDays; d++) {
+            current.push(d);
+            if (current.length === 7) {
+                weeks.push(current);
+                current = [];
+            }
         }
-      });
-      html+='</tr>';
-    });
-  });
-  html+='</tbody></table></div>';
-  wrapper.innerHTML=html; updateStats();
-}
-
-function updateStats() {
-  const total=new Date(YEAR,MONTH,0).getDate()*ROLES.length;
-  const filled=Object.keys(assignments).filter(k=>assignments[k]).length;
-  document.getElementById('statFilled').textContent=filled;
-  document.getElementById('statEmpty').textContent=total-filled;
-}
-
-function renderAll() { renderCoachList(); renderWeekTabs(); renderSchedule(); checkNewMonthBanner(); renderLegend(); }
-
-function renderLegend() {
-  const legend=document.getElementById('legend');
-  const dots=coaches.map((name,idx)=>
-    `<span class="legend-item coach-color-${idx%COACH_COUNT} colored"><span class="legend-coach-dot"></span><span style="color:var(--cc);font-size:12px;">${escapeHtml(name)}</span></span>`
-  ).join('');
-  legend.innerHTML=`<span class="legend-item"><span class="legend-dot empty"></span>비어있음</span>${dots}
-    <span class="legend-item" style="margin-left:auto;color:var(--text-faint);font-size:11px;">배정된 칸을 다시 탭하면 수정/삭제</span>`;
-}
-
-function setActiveWeek(i) { activeWeekIdx=i; renderWeekTabs(); renderSchedule(); }
-function selectCoach(name) {
-  selectedCoach=selectedCoach===name?null:name; saveMyCoach(); renderCoachList();
-  showToast(selectedCoach?`${selectedCoach} 선택됨`:'선택 해제');
-}
-
-function openSlotModal(day,roleId) {
-  currentEditSlot={day,roleId};
-  const role=ROLES.find(r=>r.id===roleId), key=`${day}_${roleId}`, cv=assignments[key];
-  document.getElementById('modalTitle').textContent=`${MONTH}월 ${day}일 · ${role.label}`;
-  document.getElementById('modalSubtitle').textContent=cv?`현재 배정: ${cv}`:selectedCoach?`'${selectedCoach}'(으)로 배정하려면 본인 이름을 탭하세요`:'배정할 코치를 선택하세요';
-  document.getElementById('modalCoachGrid').innerHTML=coaches.map(name=>
-    `<button class="modal-coach-btn ${coachColorClass(name)} ${cv===name?'current':''}" onclick="assignSlot('${escapeAttr(name)}')">${escapeHtml(name)}${cv===name?' ✓':''}</button>`
-  ).join('');
-  document.getElementById('modalClearBtn').style.display=cv?'inline-block':'none';
-  document.getElementById('slotModal').classList.add('open');
-}
-function closeSlotModal() { document.getElementById('slotModal').classList.remove('open'); currentEditSlot=null; }
-
-async function assignSlot(coachName) {
-  if(!currentEditSlot)return;
-  const{day,roleId}=currentEditSlot, key=`${day}_${roleId}`, pv=assignments[key];
-  assignments[key]=coachName; pendingKeys.add(key); closeSlotModal(); renderAll(); setSyncStatus('syncing','저장 중...');
-  try { await apiPost({action:'assign',day,roleId,coachName}); pendingKeys.delete(key); setSyncStatus('connected','저장됨'); renderAll(); showToast(`${coachName} 배정 완료`); }
-  catch(e) { if(pv)assignments[key]=pv;else delete assignments[key]; pendingKeys.delete(key); renderAll(); setSyncStatus('error','저장 실패'); showToast('저장 실패. 인터넷 연결을 확인하세요.',true); }
-}
-
-async function clearSlot() {
-  if(!currentEditSlot)return;
-  const{day,roleId}=currentEditSlot, key=`${day}_${roleId}`, pv=assignments[key];
-  delete assignments[key]; pendingKeys.add(key); closeSlotModal(); renderAll(); setSyncStatus('syncing','저장 중...');
-  try { await apiPost({action:'clear',day,roleId}); pendingKeys.delete(key); setSyncStatus('connected','저장됨'); renderAll(); showToast('비움'); }
-  catch(e) { if(pv)assignments[key]=pv; pendingKeys.delete(key); renderAll(); setSyncStatus('error','저장 실패'); showToast('저장 실패. 인터넷 연결을 확인하세요.',true); }
-}
-
-function toggleMultiSelect() { isMultiSelectMode=!isMultiSelectMode; if(!isMultiSelectMode)multiSelectedKeys.clear(); updateMultiSelectUI(); renderSchedule(); }
-function toggleSlotSelect(day,roleId) {
-  const key=`${day}_${roleId}`;
-  if(multiSelectedKeys.has(key))multiSelectedKeys.delete(key);else multiSelectedKeys.add(key);
-  updateMultiSelectUI(); renderSchedule();
-}
-function updateMultiSelectUI() {
-  const n=multiSelectedKeys.size;
-  document.getElementById('multiSelectBtn').classList.toggle('active',isMultiSelectMode);
-  document.getElementById('multiSelectBtn').textContent=isMultiSelectMode?'☑ 선택 중':'☑ 다중 선택';
-  document.getElementById('multiSelectCount').textContent=`${n}개 선택`;
-  document.getElementById('multiSelectCount').classList.toggle('show',isMultiSelectMode&&n>0);
-  document.getElementById('multiApplyBtn').classList.toggle('show',isMultiSelectMode&&n>0);
-  document.getElementById('multiCancelBtn').classList.toggle('show',isMultiSelectMode);
-}
-function cancelMultiSelect() { isMultiSelectMode=false; multiSelectedKeys.clear(); updateMultiSelectUI(); renderSchedule(); }
-function openMultiAssignModal() {
-  if(!multiSelectedKeys.size)return;
-  document.getElementById('multiAssignSubtitle').textContent=`선택된 ${multiSelectedKeys.size}개 칸에 일괄 배정합니다.`;
-  document.getElementById('multiAssignCoachGrid').innerHTML=coaches.map(name=>
-    `<button class="modal-coach-btn ${coachColorClass(name)}" onclick="applyMultiAssign('${escapeAttr(name)}')">${escapeHtml(name)}</button>`
-  ).join('');
-  document.getElementById('multiAssignModal').classList.add('open');
-}
-function closeMultiAssignModal() { document.getElementById('multiAssignModal').classList.remove('open'); }
-async function applyMultiAssign(coachName) {
-  closeMultiAssignModal();
-  const keys=[...multiSelectedKeys], pv={};
-  keys.forEach(k=>{pv[k]=assignments[k];assignments[k]=coachName;pendingKeys.add(k);});
-  cancelMultiSelect(); renderAll(); setSyncStatus('syncing','저장 중...');
-  let fail=0;
-  for(const k of keys) {
-    const ui=k.indexOf('_'), day=Number(k.substring(0,ui)), roleId=k.substring(ui+1);
-    try{await apiPost({action:'assign',day,roleId,coachName});pendingKeys.delete(k);}
-    catch(e){fail++;assignments[k]=pv[k]||'';if(!assignments[k])delete assignments[k];pendingKeys.delete(k);}
-  }
-  renderAll();
-  if(!fail){setSyncStatus('connected','저장됨');showToast(`${coachName} ${keys.length}건 일괄 배정 완료`);}
-  else{setSyncStatus('error',`${fail}건 저장 실패`);showToast(`${fail}건 저장 실패`,true);}
-}
-
-async function openCopyPrevModal() {
-  const pm=MONTH===1?12:MONTH-1, py=MONTH===1?YEAR-1:YEAR;
-  const pmk=getMonthKey(py,pm), pl=getMonthLabel(py,pm);
-  document.getElementById('copyPrevSubtitle').textContent=`${pl} 요일 패턴 → ${getMonthLabel(YEAR,MONTH)} 적용`;
-  document.getElementById('copyPrevContent').innerHTML='<div style="text-align:center;padding:20px;color:var(--text-dim)">불러오는 중...</div>';
-  document.getElementById('copyPrevModal').classList.add('open');
-  setSyncStatus('syncing','불러오는 중...');
-  try{const res=await fetch(`${APPS_SCRIPT_URL}?month=${pmk}&t=${Date.now()}`);const json=await res.json();prevMonthAssignments=json.data.assignments||{};setSyncStatus('connected','연결됨');}
-  catch(e){prevMonthAssignments={};setSyncStatus('error','불러오기 실패');}
-  renderCopyPreview(buildCopyPreview(py,pm),pl);
-}
-function buildCopyPreview(py,pm) {
-  const pdw={}, pd=new Date(py,pm,0).getDate();
-  for(let d=1;d<=pd;d++) pdw[d]=(new Date(py,pm-1,d).getDay()+6)%7;
-  const wrc={};
-  Object.entries(prevMonthAssignments).forEach(([k,cn])=>{
-    if(!cn)return;const[ds,...rp]=k.split('_');const ri=rp.join('_');const wd=pdw[Number(ds)];
-    if(wd===undefined)return;wrc[`${wd}_${ri}`]=cn;
-  });
-  const cd=new Date(YEAR,MONTH,0).getDate(), result=[];
-  for(let d=1;d<=cd;d++){
-    const wd=(new Date(YEAR,MONTH-1,d).getDay()+6)%7;
-    ROLES.forEach(r=>{const cn=wrc[`${wd}_${r.id}`];if(cn&&!assignments[`${d}_${r.id}`])result.push({day:d,roleId:r.id,roleLabel:r.label,coachName:cn,weekday:wd});});
-  }
-  return result;
-}
-function renderCopyPreview(preview,prevLabel) {
-  const content=document.getElementById('copyPrevContent');
-  if(!preview.length){content.innerHTML=`<div class="copy-preview-empty">${prevLabel}에 배정 데이터가 없거나 이미 모두 배정되어 있습니다.</div>`;document.getElementById('copyPrevConfirmBtn').style.display='none';return;}
-  document.getElementById('copyPrevConfirmBtn').style.display='inline-block';
-  const WK=['월','화','수','목','금','토','일'];
-  let html=`<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">총 <strong style="color:var(--accent)">${preview.length}개</strong> 칸이 채워집니다 (이미 배정된 칸 제외)</div>
-    <table class="copy-preview-table"><thead><tr><th>날짜</th><th>요일</th><th>역할</th><th>배정 코치</th></tr></thead><tbody>`;
-  preview.slice(0,50).forEach(({day,roleLabel,coachName,weekday})=>{
-    html+=`<tr><td>${MONTH}/${day}</td><td>${WK[weekday]}</td><td>${escapeHtml(roleLabel)}</td><td class="coach-name ${coachColorClass(coachName)}" style="color:var(--cc,inherit)">${escapeHtml(coachName)}</td></tr>`;
-  });
-  if(preview.length>50)html+=`<tr><td colspan="4" style="text-align:center;color:var(--text-faint)">... 외 ${preview.length-50}개</td></tr>`;
-  html+='</tbody></table>';
-  content.innerHTML=html; content._preview=preview;
-}
-function closeCopyPrevModal() { document.getElementById('copyPrevModal').classList.remove('open'); prevMonthAssignments={}; }
-async function confirmCopyPrev() {
-  const content=document.getElementById('copyPrevContent'), preview=content._preview;
-  if(!preview||!preview.length)return;
-  const btn=document.getElementById('copyPrevConfirmBtn'); btn.textContent='적용 중...'; btn.disabled=true;
-  preview.forEach(({day,roleId,coachName})=>{assignments[`${day}_${roleId}`]=coachName;pendingKeys.add(`${day}_${roleId}`);});
-  closeCopyPrevModal(); renderAll(); setSyncStatus('syncing','저장 중...');
-  let fail=0;
-  for(const{day,roleId,coachName}of preview){
-    try{await apiPost({action:'assign',day,roleId,coachName});pendingKeys.delete(`${day}_${roleId}`);}
-    catch(e){fail++;delete assignments[`${day}_${roleId}`];pendingKeys.delete(`${day}_${roleId}`);}
-  }
-  renderAll(); btn.textContent='이대로 적용'; btn.disabled=false;
-  if(!fail){setSyncStatus('connected','저장됨');showToast(`${preview.length}건 복사 완료`);}
-  else{setSyncStatus('error',`${fail}건 실패`);showToast(`${fail}건 저장 실패`,true);}
-}
-
-function openCoachEditor() {
-  document.getElementById('coachEditorList').innerHTML=coaches.map((name,i)=>`
-    <div class="coach-editor-row">
-      <label>담당자${i+1}</label>
-      <input type="text" id="coachInput${i}" value="${escapeAttr(name)}" maxlength="10" placeholder="이름 입력">
-    </div>`).join('');
-  document.getElementById('coachModal').classList.add('open');
-}
-function closeCoachEditor() { document.getElementById('coachModal').classList.remove('open'); }
-
-async function saveCoachNames() {
-  const newCoaches=[];
-  for(let i=0;i<COACH_COUNT;i++){
-    const v=document.getElementById(`coachInput${i}`).value.trim()||`담당자${i+1}`;
-    newCoaches.push(v);
-  }
-  if(new Set(newCoaches).size!==COACH_COUNT){showToast('이름이 중복됩니다. 다르게 입력해주세요.',true);return;}
-  const btn=document.getElementById('saveCoachesBtn'); btn.textContent='저장 중...'; btn.disabled=true;
-  setSyncStatus('syncing','저장 중...');
-  try {
-    await apiPost({action:'saveCoaches',coaches:newCoaches});
-    const old=[...coaches]; coaches=newCoaches;
-    if(selectedCoach){const i=old.indexOf(selectedCoach);if(i>=0){selectedCoach=newCoaches[i];saveMyCoach();}}
-    await loadData(); renderAll(); closeCoachEditor(); setSyncStatus('connected','연결됨'); showToast('담당자 이름 저장됨');
-  } catch(e){setSyncStatus('error','저장 실패');showToast('저장 실패: '+e.message,true);}
-  finally{btn.textContent='저장';btn.disabled=false;}
-}
-
-function openResetConfirm() {
-  const pm=MONTH===1?12:MONTH-1, py=MONTH===1?YEAR-1:YEAR;
-  document.getElementById('resetModalMonth').textContent=getMonthLabel(YEAR,MONTH);
-  document.getElementById('resetModalPrevMonth').textContent=getMonthLabel(py,pm);
-  document.getElementById('resetModal').classList.add('open');
-}
-function closeResetModal() { document.getElementById('resetModal').classList.remove('open'); }
-async function confirmReset() {
-  const btn=document.getElementById('resetConfirmBtn'); btn.textContent='초기화 중...'; btn.disabled=true;
-  setSyncStatus('syncing','초기화 중...');
-  try{await apiPost({action:'resetMonth'});assignments={};closeResetModal();document.getElementById('monthResetBar').classList.remove('show');renderAll();setSyncStatus('connected','연결됨');showToast(`${getMonthLabel(YEAR,MONTH)} 초기화 완료`);}
-  catch(e){setSyncStatus('error','초기화 실패');showToast('초기화 실패: '+e.message,true);}
-  finally{btn.textContent='초기화 실행';btn.disabled=false;}
-}
-
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
-function escapeAttr(s){return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');}
-
-let toastTimer;
-function showToast(msg,isError) {
-  const t=document.getElementById('toast'); t.textContent=msg;
-  t.className='toast show'+(isError?' error':'');
-  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.className='toast'+(isError?' error':''),2500);
-}
-
-document.getElementById('slotModal').addEventListener('click',e=>{if(e.target.id==='slotModal')closeSlotModal();});
-document.getElementById('coachModal').addEventListener('click',e=>{if(e.target.id==='coachModal')closeCoachEditor();});
-document.getElementById('resetModal').addEventListener('click',e=>{if(e.target.id==='resetModal')closeResetModal();});
-document.getElementById('multiAssignModal').addEventListener('click',e=>{if(e.target.id==='multiAssignModal')closeMultiAssignModal();});
-document.getElementById('copyPrevModal').addEventListener('click',e=>{if(e.target.id==='copyPrevModal')closeCopyPrevModal();});
-
-async function refresh() {
-  if(pendingKeys.size>0)return;
-  try {
-    const data=await apiGet(), na=data.assignments||{};
-    let nc=coaches;
-    if(Array.isArray(data.coaches)&&data.coaches.length>0){
-      const loaded=data.coaches.slice(0,COACH_COUNT);
-      while(loaded.length<COACH_COUNT) loaded.push(`담당자${loaded.length+1}`);
-      nc=loaded;
+        if (current.length > 0) {
+            while (current.length < 7)
+                current.push(null);
+            weeks.push(current);
+        }
+        return weeks;
     }
-    if(JSON.stringify(na)!==JSON.stringify(assignments)||JSON.stringify(nc)!==JSON.stringify(coaches)){assignments=na;coaches=nc;renderAll();}
-    setSyncStatus('connected','연결됨');
-  } catch(e){setSyncStatus('error','연결 실패');}
-}
 
-(async()=>{
-  if(APPS_SCRIPT_URL.includes('YOUR_APPS_SCRIPT_URL_HERE')){showConfigWarning();setSyncStatus('error','설정 필요');WEEKS=buildWeeks(YEAR,MONTH);updateMonthUI();renderAll();return;}
-  loadMyCoach(); WEEKS=buildWeeks(YEAR,MONTH); updateMonthUI(); await loadData(); isFirstLoad=false; renderAll();
-  setInterval(refresh,15000);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
-})();
-</script>
+    function getMonthKey(y, m) {
+        return `${y}-${String(m).padStart(2, '0')}`;
+    }
+    function getMonthLabel(y, m) {
+        return `${y}년 ${['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'][m - 1]}`;
+    }
+    function changeMonth(d) {
+        MONTH += d;
+        if (MONTH > 12) {
+            MONTH = 1;
+            YEAR++;
+        }
+        if (MONTH < 1) {
+            MONTH = 12;
+            YEAR--;
+        }
+        initMonth();
+    }
+    function goToCurrentMonth() {
+        const n = new Date();
+        YEAR = n.getFullYear();
+        MONTH = n.getMonth() + 1;
+        initMonth();
+    }
+    function isCurrentMonth() {
+        const n = new Date();
+        return YEAR === n.getFullYear() && MONTH === n.getMonth() + 1;
+    }
+
+    async function initMonth() {
+        WEEKS = buildWeeks(YEAR, MONTH);
+        activeWeekIdx = detectCurrentWeek();
+        updateMonthUI();
+        assignments = {};
+        document.getElementById('scheduleWrapper').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim);">불러오는 중...</div>';
+        await loadData();
+        renderAll();
+    }
+
+    function updateMonthUI() {
+        const KM = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+        document.getElementById('pageTitle').innerHTML = `${YEAR}년 ${KM[MONTH - 1]} <span class="accent">코치 스케줄</span>`;
+        document.getElementById('monthNavTitle').textContent = getMonthLabel(YEAR, MONTH);
+        document.getElementById('todayBtn').classList.toggle('is-current', isCurrentMonth());
+        checkNewMonthBanner();
+    }
+
+    function checkNewMonthBanner() {
+        const bar = document.getElementById('monthResetBar');
+        const hasData = Object.keys(assignments).some(k => assignments[k]);
+        if (isCurrentMonth() && !hasData && !isFirstLoad) {
+            document.getElementById('resetBarMonth').textContent = getMonthLabel(YEAR, MONTH);
+            bar.classList.add('show');
+        }
+        else
+            bar.classList.remove('show');
+    }
+
+    function setSyncStatus(s, t) {
+        document.getElementById('syncDot').className = 'sync-dot ' + (s || '');
+        document.getElementById('syncText').textContent = t || '';
+    }
+
+    async function apiGet() {
+        if (APPS_SCRIPT_URL.includes('YOUR_APPS_SCRIPT_URL_HERE'))
+            throw new Error('URL 미설정');
+        const res = await fetch(`${APPS_SCRIPT_URL}?month=${getMonthKey(YEAR, MONTH)}&t=${Date.now()}`);
+        if (!res.ok)
+            throw new Error('네트워크 오류: ' + res.status);
+        const json = await res.json();
+        if (!json.success)
+            throw new Error(json.error || '서버 오류');
+        return json.data;
+    }
+
+    async function apiPost(payload) {
+        if (APPS_SCRIPT_URL.includes('YOUR_APPS_SCRIPT_URL_HERE'))
+            throw new Error('URL 미설정');
+        payload.month = getMonthKey(YEAR, MONTH);
+        const res = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify(payload),
+            redirect: 'follow'
+        });
+        if (!res.ok)
+            throw new Error('네트워크 오류: ' + res.status);
+        const json = await res.json();
+        if (!json.success)
+            throw new Error(json.error || '서버 오류');
+        return json.data;
+    }
+
+    async function loadData() {
+        setSyncStatus('syncing', '동기화 중...');
+        try {
+            const data = await apiGet();
+            assignments = data.assignments || {};
+            if (Array.isArray(data.coaches) && data.coaches.length > 0) {
+                const loaded = data.coaches.slice(0, COACH_COUNT);
+                while (loaded.length < COACH_COUNT)
+                    loaded.push(`담당자${loaded.length + 1}`);
+                coaches = loaded;
+            }
+            setSyncStatus('connected', '연결됨');
+            return true;
+        } catch (e) {
+            console.error('Load failed:', e);
+            setSyncStatus('error', '연결 실패');
+            return false;
+        }
+    }
+
+    function loadMyCoach() {
+        try {
+            const v = localStorage.getItem(STORAGE_KEY_ME);
+            if (v)
+                selectedCoach = v;
+        } catch (e) {}
+    }
+    function saveMyCoach() {
+        try {
+            if (selectedCoach)
+                localStorage.setItem(STORAGE_KEY_ME, selectedCoach);
+            else
+                localStorage.removeItem(STORAGE_KEY_ME);
+        } catch (e) {}
+    }
+
+    function getWeekEmptyCount(wi) {
+        const week = WEEKS[wi];
+        let empty = 0;
+        week.forEach(d => {
+            if (d === null)
+                return;
+            ROLES.forEach(r => {
+                if (!assignments[`${d}_${r.id}`])
+                    empty++;
+            });
+        });
+        return empty;
+    }
+    function getDayEmptyCount(d) {
+        if (d === null || d === undefined)
+            return 0;
+        let empty = 0;
+        ROLES.forEach(r => {
+            if (!assignments[`${d}_${r.id}`])
+                empty++;
+        });
+        return empty;
+    }
+    function getWeekRange(wi) {
+        const days = WEEKS[wi].filter(d => d !== null);
+        return days.length === 0 ? '' : `${MONTH}/${days[0]} ~ ${MONTH}/${days[days.length - 1]}`;
+    }
+    function detectCurrentWeek() {
+        if (!isCurrentMonth())
+            return 0;
+        const day = new Date().getDate();
+        for (let i = 0; i < WEEKS.length; i++) {
+            if (WEEKS[i].includes(day))
+                return i;
+        }
+        return 0;
+    }
+
+    function getCoachColorIdx(name) {
+        const i = coaches.indexOf(name);
+        return i >= 0 ? i % COACH_COUNT : -1;
+    }
+    function coachColorClass(name) {
+        const i = getCoachColorIdx(name);
+        return i >= 0 ? `colored coach-color-${i}` : '';
+    }
+
+    function showConfigWarning() {
+        document.getElementById('configWarning').innerHTML = `<div class="config-warning"><strong>⚠️ 설정 필요</strong><br>HTML 파일 안의 <code>APPS_SCRIPT_URL</code> 값을 Google Apps Script 웹앱 URL로 교체해야 합니다.</div>`;
+    }
+
+    function renderCoachList() {
+        const list = document.getElementById('coachList');
+        const counts = {};
+        coaches.forEach(c => counts[c] = 0);
+        Object.values(assignments).forEach(n => {
+            if (counts[n] !== undefined)
+                counts[n]++;
+        });
+        list.innerHTML = coaches.map((name, idx) => `
+    <div class="coach-chip ${coachColorClass(name)} ${selectedCoach === name ? 'active' : ''}" onclick="selectCoach('${escapeAttr(name)}')">
+      <span class="coach-name-text">${escapeHtml(name)}</span>
+      <span class="count">${counts[name] || 0}건</span>
+    </div>`
+        ).join('');
+    }
+
+    function renderWeekTabs() {
+        document.getElementById('weekNav').innerHTML = WEEKS.map((week, idx) => {
+            const ec = getWeekEmptyCount(idx),
+                rng = getWeekRange(idx),
+                ne = ec === 0;
+            const cls = [idx === activeWeekIdx ? 'active' : '', ne ? 'no-empty' : 'has-empty'].filter(Boolean).join(' ');
+            return `<button class="week-tab ${cls}" onclick="setActiveWeek(${idx})">
+      <span class="tab-label">WEEK ${idx + 1}</span>
+      <span class="tab-meta"><span class="tab-date">${rng}</span></span>
+      <span class="tab-empty-count">${ne ? '✓' : `미배정 ${ec}`}</span>
+    </button>`
+            ;
+        }).join('');
+    }
+
+    function renderSchedule() {
+        const wrapper = document.getElementById('scheduleWrapper'),
+            week = WEEKS[activeWeekIdx];
+        const todayDate = isCurrentMonth() ? new Date().getDate() : -1,
+            ec = getWeekEmptyCount(activeWeekIdx);
+        let html = `<div class="week-info-bar"><div><div class="week-info-title">WEEK ${activeWeekIdx + 1}</div><div class="week-info-sub">${getWeekRange(activeWeekIdx)}</div></div>
+    <div class="week-empty-badge ${ec === 0 ? 'zero' : ''}">${ec === 0 ? '✓ 모든 자리 배정 완료' : `미배정 ${ec}`}</div></div>`;
+        html += '<div class="table-scroll"><table><thead class="date-header"><tr><th class="role-col">역할 / ROLE</th>';
+        week.forEach((d, di) => {
+            const classes = [];
+            if (d === null)
+                classes.push('disabled');
+            else {
+                if (di === 5)
+                    classes.push('weekend-sat');
+                else if (di === 6)
+                    classes.push('weekend-sun');
+                if (d === todayDate)
+                    classes.push('today');
+                if (getDayEmptyCount(d) > 0)
+                    classes.push('has-empty');
+            }
+            html += `<th class="${classes.join(' ')}"><div class="date-weekday">${WEEKDAY_HEADERS[di]}</div><div class="date-num">${d ? `${MONTH}/${d}` : '—'}</div></th>`;
+        });
+        html += '</tr></thead><tbody>';
+        ROLE_GROUPS.forEach((g, gi) => {
+            if (gi > 0)
+                html += '<tr class="group-divider"><td colspan="8"></td></tr>';
+            html += `<tr class="group-header"><td colspan="8">${g.name}</td></tr>`;
+            g.roles.forEach(role => {
+                html += '<tr>';
+                html += `<td class="role-label group-${g.group}" title="${role.label}">${window.innerWidth <= 768 && role.short ? escapeHtml(role.short) : escapeHtml(role.label)}</td>`;
+                week.forEach(d => {
+                    if (d === null) {
+                        html += '<td><div class="slot disabled"></div></td>';
+                        return;
+                    }
+                    const key = `${d}_${role.id}`,
+                        val = assignments[key],
+                        pc = pendingKeys.has(key) ? ' pending' : '';
+                    if (val) {
+                        html += `<td><div class="slot filled ${coachColorClass(val)}${pc}" onclick="openSlotModal(${d},'${role.id}')">${escapeHtml(val)}</div></td>`;
+                    }
+                    else {
+                        const sc = multiSelectedKeys.has(`${d}_${role.id}`) ? ' multi-selected' : '';
+                        html += isMultiSelectMode
+                        ? `<td><div class="slot empty${pc}${sc}" onclick="toggleSlotSelect(${d},'${role.id}')"></div></td>`
+                        : `<td><div class="slot empty${pc}" onclick="openSlotModal(${d},'${role.id}')"></div></td>`;
+                    }
+                });
+                html += '</tr>';
+            });
+        });
+        html += '</tbody></table></div>';
+        wrapper.innerHTML = html;
+        updateStats();
+    }
+
+    function updateStats() {
+        const total = new Date(YEAR, MONTH, 0).getDate() * ROLES.length;
+        const filled = Object.keys(assignments).filter(k => assignments[k]).length;
+        document.getElementById('statFilled').textContent = filled;
+        document.getElementById('statEmpty').textContent = total - filled;
+    }
+
+    function renderAll() {
+        renderCoachList();
+        renderWeekTabs();
+        renderSchedule();
+        checkNewMonthBanner();
+        renderLegend();
+    }
+
+    function renderLegend() {
+        const legend = document.getElementById('legend');
+        const dots = coaches.map((name, idx) =>
+        `<span class="legend-item coach-color-${idx % COACH_COUNT} colored"><span class="legend-coach-dot"></span><span style="color:var(--cc);font-size:12px;">${escapeHtml(name)}</span></span>`
+        ).join('');
+        legend.innerHTML = `<span class="legend-item"><span class="legend-dot empty"></span>비어있음</span>${dots}
+    <span class="legend-item" style="margin-left:auto;color:var(--text-faint);font-size:11px;">배정된 칸을 다시 탭하면 수정/삭제</span>`
+        ;
+    }
+
+    function setActiveWeek(i) {
+        activeWeekIdx = i;
+        renderWeekTabs();
+        renderSchedule();
+    }
+    function selectCoach(name) {
+        selectedCoach = selectedCoach === name ? null : name;
+        saveMyCoach();
+        renderCoachList();
+        showToast(selectedCoach ? `${selectedCoach} 선택됨` : '선택 해제');
+    }
+
+    function openSlotModal(day, roleId) {
+        currentEditSlot = {
+            day,
+            roleId
+        };
+        const role = ROLES.find(r => r.id === roleId),
+            key = `${day}_${roleId}`,
+            cv = assignments[key];
+        document.getElementById('modalTitle').textContent = `${MONTH}월 ${day}일 · ${role.label}`;
+        document.getElementById('modalSubtitle').textContent = cv ? `현재 배정: ${cv}` : selectedCoach ? `'${selectedCoach}'(으)로 배정하려면 본인 이름을 탭하세요` : '배정할 코치를 선택하세요';
+        document.getElementById('modalCoachGrid').innerHTML = coaches.map(name =>
+        `<button class="modal-coach-btn ${coachColorClass(name)} ${cv === name ? 'current' : ''}" onclick="assignSlot('${escapeAttr(name)}')">${escapeHtml(name)}${cv === name ? ' ✓' : ''}</button>`
+        ).join('');
+        document.getElementById('modalClearBtn').style.display = cv ? 'inline-block' : 'none';
+        document.getElementById('slotModal').classList.add('open');
+    }
+    function closeSlotModal() {
+        document.getElementById('slotModal').classList.remove('open');
+        currentEditSlot = null;
+    }
+
+    async function assignSlot(coachName) {
+        if (!currentEditSlot)
+            return;
+        const {day, roleId} = currentEditSlot,
+            key = `${day}_${roleId}`,
+            pv = assignments[key];
+        assignments[key] = coachName;
+        pendingKeys.add(key);
+        closeSlotModal();
+        renderAll();
+        setSyncStatus('syncing', '저장 중...');
+        try {
+            await apiPost({
+                action: 'assign',
+                day,
+                roleId,
+                coachName
+            });
+            pendingKeys.delete(key);
+            setSyncStatus('connected', '저장됨');
+            renderAll();
+            showToast(`${coachName} 배정 완료`);
+        }
+        catch (e) {
+            if (pv)
+                assignments[key] = pv;
+            else
+                delete assignments[key];
+            pendingKeys.delete(key);
+            renderAll();
+            setSyncStatus('error', '저장 실패');
+            showToast('저장 실패. 인터넷 연결을 확인하세요.', true);
+        }
+    }
+
+    async function clearSlot() {
+        if (!currentEditSlot)
+            return;
+        const {day, roleId} = currentEditSlot,
+            key = `${day}_${roleId}`,
+            pv = assignments[key];
+        delete assignments[key];
+        pendingKeys.add(key);
+        closeSlotModal();
+        renderAll();
+        setSyncStatus('syncing', '저장 중...');
+        try {
+            await apiPost({
+                action: 'clear',
+                day,
+                roleId
+            });
+            pendingKeys.delete(key);
+            setSyncStatus('connected', '저장됨');
+            renderAll();
+            showToast('비움');
+        }
+        catch (e) {
+            if (pv)
+                assignments[key] = pv;
+            pendingKeys.delete(key);
+            renderAll();
+            setSyncStatus('error', '저장 실패');
+            showToast('저장 실패. 인터넷 연결을 확인하세요.', true);
+        }
+    }
+
+    function toggleMultiSelect() {
+        isMultiSelectMode = !isMultiSelectMode;
+        if (!isMultiSelectMode)
+            multiSelectedKeys.clear();
+        updateMultiSelectUI();
+        renderSchedule();
+    }
+    function toggleSlotSelect(day, roleId) {
+        const key = `${day}_${roleId}`;
+        if (multiSelectedKeys.has(key))
+            multiSelectedKeys.delete(key);
+        else
+            multiSelectedKeys.add(key);
+        updateMultiSelectUI();
+        renderSchedule();
+    }
+    function updateMultiSelectUI() {
+        const n = multiSelectedKeys.size;
+        document.getElementById('multiSelectBtn').classList.toggle('active', isMultiSelectMode);
+        document.getElementById('multiSelectBtn').textContent = isMultiSelectMode ? '☑ 선택 중' : '☑ 다중 선택';
+        document.getElementById('multiSelectCount').textContent = `${n}개 선택`;
+        document.getElementById('multiSelectCount').classList.toggle('show', isMultiSelectMode && n > 0);
+        document.getElementById('multiApplyBtn').classList.toggle('show', isMultiSelectMode && n > 0);
+        document.getElementById('multiCancelBtn').classList.toggle('show', isMultiSelectMode);
+    }
+    function cancelMultiSelect() {
+        isMultiSelectMode = false;
+        multiSelectedKeys.clear();
+        updateMultiSelectUI();
+        renderSchedule();
+    }
+    function openMultiAssignModal() {
+        if (!multiSelectedKeys.size)
+            return;
+        document.getElementById('multiAssignSubtitle').textContent = `선택된 ${multiSelectedKeys.size}개 칸에 일괄 배정합니다.`;
+        document.getElementById('multiAssignCoachGrid').innerHTML = coaches.map(name =>
+        `<button class="modal-coach-btn ${coachColorClass(name)}" onclick="applyMultiAssign('${escapeAttr(name)}')">${escapeHtml(name)}</button>`
+        ).join('');
+        document.getElementById('multiAssignModal').classList.add('open');
+    }
+    function closeMultiAssignModal() {
+        document.getElementById('multiAssignModal').classList.remove('open');
+    }
+    async function applyMultiAssign(coachName) {
+        closeMultiAssignModal();
+        const keys = [...multiSelectedKeys],
+            pv = {};
+        keys.forEach(k => {
+            pv[k] = assignments[k];
+            assignments[k] = coachName;
+            pendingKeys.add(k);
+        });
+        cancelMultiSelect();
+        renderAll();
+        setSyncStatus('syncing', '저장 중...');
+        let fail = 0;
+        for (const k of keys) {
+            const ui = k.indexOf('_'),
+                day = Number(k.substring(0, ui)),
+                roleId = k.substring(ui + 1);
+            try {
+                await apiPost({
+                    action: 'assign',
+                    day,
+                    roleId,
+                    coachName
+                });
+                pendingKeys.delete(k);
+            }
+            catch (e) {
+                fail++;
+                assignments[k] = pv[k] || '';
+                if (!assignments[k])
+                    delete assignments[k];
+                pendingKeys.delete(k);
+            }
+        }
+        renderAll();
+        if (!fail) {
+            setSyncStatus('connected', '저장됨');
+            showToast(`${coachName} ${keys.length}건 일괄 배정 완료`);
+        }
+        else {
+            setSyncStatus('error', `${fail}건 저장 실패`);
+            showToast(`${fail}건 저장 실패`, true);
+        }
+    }
+
+    async function openCopyPrevModal() {
+        const pm = MONTH === 1 ? 12 : MONTH - 1,
+            py = MONTH === 1 ? YEAR - 1 : YEAR;
+        const pmk = getMonthKey(py, pm),
+            pl = getMonthLabel(py, pm);
+        document.getElementById('copyPrevSubtitle').textContent = `${pl} 요일 패턴 → ${getMonthLabel(YEAR, MONTH)} 적용`;
+        document.getElementById('copyPrevContent').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-dim)">불러오는 중...</div>';
+        document.getElementById('copyPrevModal').classList.add('open');
+        setSyncStatus('syncing', '불러오는 중...');
+        try {
+            const res = await fetch(`${APPS_SCRIPT_URL}?month=${pmk}&t=${Date.now()}`);
+            const json = await res.json();
+            prevMonthAssignments = json.data.assignments || {};
+            setSyncStatus('connected', '연결됨');
+        }
+        catch (e) {
+            prevMonthAssignments = {};
+            setSyncStatus('error', '불러오기 실패');
+        }
+        renderCopyPreview(buildCopyPreview(py, pm), pl);
+    }
+    function buildCopyPreview(py, pm) {
+        const pdw = {},
+            pd = new Date(py, pm, 0).getDate();
+        for (let d = 1; d <= pd; d++)
+            pdw[d] = (new Date(py, pm - 1, d).getDay() + 6) % 7;
+        const wrc = {};
+        Object.entries(prevMonthAssignments).forEach(([k, cn]) => {
+            if (!cn)
+                return;
+            const [ds, ...rp] = k.split('_');
+            const ri = rp.join('_');
+            const wd = pdw[Number(ds)];
+            if (wd === undefined)
+                return;
+            wrc[`${wd}_${ri}`] = cn;
+        });
+        const cd = new Date(YEAR, MONTH, 0).getDate(),
+            result = [];
+        for (let d = 1; d <= cd; d++) {
+            const wd = (new Date(YEAR, MONTH - 1, d).getDay() + 6) % 7;
+            ROLES.forEach(r => {
+                const cn = wrc[`${wd}_${r.id}`];
+                if (cn && !assignments[`${d}_${r.id}`])
+                    result.push({
+                        day: d,
+                        roleId: r.id,
+                        roleLabel: r.label,
+                        coachName: cn,
+                        weekday: wd
+                    });
+            });
+        }
+        return result;
+    }
+    function renderCopyPreview(preview, prevLabel) {
+        const content = document.getElementById('copyPrevContent');
+        if (!preview.length) {
+            content.innerHTML = `<div class="copy-preview-empty">${prevLabel}에 배정 데이터가 없거나 이미 모두 배정되어 있습니다.</div>`;
+            document.getElementById('copyPrevConfirmBtn').style.display = 'none';
+            return;
+        }
+        document.getElementById('copyPrevConfirmBtn').style.display = 'inline-block';
+        const WK = ['월', '화', '수', '목', '금', '토', '일'];
+        let html = `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">총 <strong style="color:var(--accent)">${preview.length}개</strong> 칸이 채워집니다 (이미 배정된 칸 제외)</div>
+    <table class="copy-preview-table"><thead><tr><th>날짜</th><th>요일</th><th>역할</th><th>배정 코치</th></tr></thead><tbody>`
+        ;
+        preview.slice(0, 50).forEach(({day, roleLabel, coachName, weekday}) => {
+            html += `<tr><td>${MONTH}/${day}</td><td>${WK[weekday]}</td><td>${escapeHtml(roleLabel)}</td><td class="coach-name ${coachColorClass(coachName)}" style="color:var(--cc,inherit)">${escapeHtml(coachName)}</td></tr>`;
+        });
+        if (preview.length > 50)
+            html += `<tr><td colspan="4" style="text-align:center;color:var(--text-faint)">... 외 ${preview.length - 50}개</td></tr>`;
+        html += '</tbody></table>';
+        content.innerHTML = html;
+        content._preview = preview;
+    }
+    function closeCopyPrevModal() {
+        document.getElementById('copyPrevModal').classList.remove('open');
+        prevMonthAssignments = {};
+    }
+    async function confirmCopyPrev() {
+        const content = document.getElementById('copyPrevContent'),
+            preview = content._preview;
+        if (!preview || !preview.length)
+            return;
+        const btn = document.getElementById('copyPrevConfirmBtn');
+        btn.textContent = '적용 중...';
+        btn.disabled = true;
+        preview.forEach(({day, roleId, coachName}) => {
+            assignments[`${day}_${roleId}`] = coachName;
+            pendingKeys.add(`${day}_${roleId}`);
+        });
+        closeCopyPrevModal();
+        renderAll();
+        setSyncStatus('syncing', '저장 중...');
+        let fail = 0;
+        for (const {day, roleId, coachName} of preview) {
+            try {
+                await apiPost({
+                    action: 'assign',
+                    day,
+                    roleId,
+                    coachName
+                });
+                pendingKeys.delete(`${day}_${roleId}`);
+            }
+            catch (e) {
+                fail++;
+                delete assignments[`${day}_${roleId}`];
+                pendingKeys.delete(`${day}_${roleId}`);
+            }
+        }
+        renderAll();
+        btn.textContent = '이대로 적용';
+        btn.disabled = false;
+        if (!fail) {
+            setSyncStatus('connected', '저장됨');
+            showToast(`${preview.length}건 복사 완료`);
+        }
+        else {
+            setSyncStatus('error', `${fail}건 실패`);
+            showToast(`${fail}건 저장 실패`, true);
+        }
+    }
+
+    function openCoachEditor() {
+        document.getElementById('coachEditorList').innerHTML = coaches.map((name, i) => `
+    <div class="coach-editor-row">
+      <label>담당자${
+        i + 1}</label>
+      <input type="text" id="coachInput${i}" value="${escapeAttr(name)}" maxlength="10" placeholder="이름 입력">
+    </div>`
+        ).join('');
+        document.getElementById('coachModal').classList.add('open');
+    }
+    function closeCoachEditor() {
+        document.getElementById('coachModal').classList.remove('open');
+    }
+
+    async function saveCoachNames() {
+        const newCoaches = [];
+        for (let i = 0; i < COACH_COUNT; i++) {
+            const v = document.getElementById(`coachInput${i}`).value.trim() || `담당자${i + 1}`;
+            newCoaches.push(v);
+        }
+        if (new Set(newCoaches).size !== COACH_COUNT) {
+            showToast('이름이 중복됩니다. 다르게 입력해주세요.', true);
+            return;
+        }
+        const btn = document.getElementById('saveCoachesBtn');
+        btn.textContent = '저장 중...';
+        btn.disabled = true;
+        setSyncStatus('syncing', '저장 중...');
+        try {
+            await apiPost({
+                action: 'saveCoaches',
+                coaches: newCoaches
+            });
+            const old = [...coaches];
+            coaches = newCoaches;
+            if (selectedCoach) {
+                const i = old.indexOf(selectedCoach);
+                if (i >= 0) {
+                    selectedCoach = newCoaches[i];
+                    saveMyCoach();
+                }
+            }
+            await loadData();
+            renderAll();
+            closeCoachEditor();
+            setSyncStatus('connected', '연결됨');
+            showToast('담당자 이름 저장됨');
+        } catch (e) {
+            setSyncStatus('error', '저장 실패');
+            showToast('저장 실패: ' + e.message, true);
+        }
+        finally {
+            btn.textContent = '저장';
+            btn.disabled = false;
+        }
+    }
+
+    function openResetConfirm() {
+        const pm = MONTH === 1 ? 12 : MONTH - 1,
+            py = MONTH === 1 ? YEAR - 1 : YEAR;
+        document.getElementById('resetModalMonth').textContent = getMonthLabel(YEAR, MONTH);
+        document.getElementById('resetModalPrevMonth').textContent = getMonthLabel(py, pm);
+        document.getElementById('resetModal').classList.add('open');
+    }
+    function closeResetModal() {
+        document.getElementById('resetModal').classList.remove('open');
+    }
+    async function confirmReset() {
+        const btn = document.getElementById('resetConfirmBtn');
+        btn.textContent = '초기화 중...';
+        btn.disabled = true;
+        setSyncStatus('syncing', '초기화 중...');
+        try {
+            await apiPost({
+                action: 'resetMonth'
+            });
+            assignments = {};
+            closeResetModal();
+            document.getElementById('monthResetBar').classList.remove('show');
+            renderAll();
+            setSyncStatus('connected', '연결됨');
+            showToast(`${getMonthLabel(YEAR, MONTH)} 초기화 완료`);
+        }
+        catch (e) {
+            setSyncStatus('error', '초기화 실패');
+            showToast('초기화 실패: ' + e.message, true);
+        }
+        finally {
+            btn.textContent = '초기화 실행';
+            btn.disabled = false;
+        }
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[c]);
+    }
+    function escapeAttr(s) {
+        return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    let toastTimer;
+    function showToast(msg, isError) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast show' + (isError ? ' error' : '');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.className = 'toast' + (isError ? ' error' : ''), 2500);
+    }
+
+    document.getElementById('slotModal').addEventListener('click', e => {
+        if (e.target.id === 'slotModal')
+            closeSlotModal();
+    });
+    document.getElementById('coachModal').addEventListener('click', e => {
+        if (e.target.id === 'coachModal')
+            closeCoachEditor();
+    });
+    document.getElementById('resetModal').addEventListener('click', e => {
+        if (e.target.id === 'resetModal')
+            closeResetModal();
+    });
+    document.getElementById('multiAssignModal').addEventListener('click', e => {
+        if (e.target.id === 'multiAssignModal')
+            closeMultiAssignModal();
+    });
+    document.getElementById('copyPrevModal').addEventListener('click', e => {
+        if (e.target.id === 'copyPrevModal')
+            closeCopyPrevModal();
+    });
+
+    async function refresh() {
+        if (pendingKeys.size > 0)
+            return;
+        try {
+            const data = await apiGet(),
+                na = data.assignments || {};
+            let nc = coaches;
+            if (Array.isArray(data.coaches) && data.coaches.length > 0) {
+                const loaded = data.coaches.slice(0, COACH_COUNT);
+                while (loaded.length < COACH_COUNT)
+                    loaded.push(`담당자${loaded.length + 1}`);
+                nc = loaded;
+            }
+            if (JSON.stringify(na) !== JSON.stringify(assignments) || JSON.stringify(nc) !== JSON.stringify(coaches)) {
+                assignments = na;
+                coaches = nc;
+                renderAll();
+            }
+            setSyncStatus('connected', '연결됨');
+        } catch (e) {
+            setSyncStatus('error', '연결 실패');
+        }
+    }
+
+    (async () => {
+        if (APPS_SCRIPT_URL.includes('YOUR_APPS_SCRIPT_URL_HERE')) {
+            showConfigWarning();
+            setSyncStatus('error', '설정 필요');
+            WEEKS = buildWeeks(YEAR, MONTH);
+            updateMonthUI();
+            renderAll();
+            return;
+        }
+        loadMyCoach();
+        WEEKS = buildWeeks(YEAR, MONTH);
+        updateMonthUI();
+        await loadData();
+        isFirstLoad = false;
+        renderAll();
+        setInterval(refresh, 15000);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden)
+                refresh();
+        });
+    })();
+    </script>
 </body>
 </html>
