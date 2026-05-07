@@ -129,7 +129,7 @@
   .slot.pending { opacity:0.5; pointer-events:none; }
   .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:100; padding:20px; }
   .modal-backdrop.open { display:flex; }
-  .modal { background:var(--surface); border:1px solid var(--border-light); border-radius:12px; padding:24px; max-width:420px; width:100%; box-shadow:var(--shadow); }
+  .modal { background:var(--surface); border:1px solid var(--border-light); border-radius:12px; padding:24px; max-width:420px; width:100%; box-shadow:var(--shadow); max-height:90vh; overflow-y:auto; }
   .modal h3 { font-family:'Archivo',sans-serif; font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
   .modal .modal-subtitle { font-size:13px; color:var(--text-dim); margin-bottom:18px; line-height:1.5; }
   .modal-coach-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:12px; }
@@ -143,16 +143,15 @@
   .btn-danger { background:var(--empty-bg); color:var(--empty); border:1px solid var(--empty); }
   .btn-danger:hover { background:var(--empty); color:#fff; }
   .btn-primary { background:var(--accent); color:#000; }
-  /* ★ label width 52px — 담당자10~12 두자리 수 대응 */
   .coach-editor-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
-  .coach-editor-row label { width:52px; font-size:12px; color:var(--text-dim); font-weight:600; }
-  .coach-editor-row input { flex:1; background:var(--surface-2); border:1px solid var(--border-light); color:var(--text); padding:8px 10px; border-radius:6px; font-family:inherit; font-size:13px; }
+  .coach-editor-row label { width:58px; font-size:12px; color:var(--text-dim); font-weight:600; flex-shrink:0; }
+  .coach-editor-row input { flex:1; background:var(--surface-2); border:1px solid var(--border-light); color:var(--text); padding:8px 10px; border-radius:6px; font-family:inherit; font-size:13px; min-width:0; }
   .coach-editor-row input:focus { outline:none; border-color:var(--accent); }
   .reset-confirm-modal { max-width:360px; }
   .reset-confirm-modal .warn-icon { font-size:32px; margin-bottom:12px; }
   .reset-confirm-modal p { font-size:13px; color:var(--text-dim); line-height:1.6; margin-bottom:8px; }
   .reset-confirm-modal strong { color:var(--accent); }
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px); background:var(--surface); color:var(--text); padding:12px 20px; border-radius:8px; border:1px solid var(--border-light); box-shadow:var(--shadow); font-size:13px; font-weight:500; transition:transform 0.3s ease; z-index:200; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px); background:var(--surface); color:var(--text); padding:12px 20px; border-radius:8px; border:1px solid var(--border-light); box-shadow:var(--shadow); font-size:13px; font-weight:500; transition:transform 0.3s ease; z-index:200; max-width:90%; text-align:center; }
   .toast.show { transform:translateX(-50%) translateY(0); }
   .toast.error { border-color:var(--empty); color:var(--empty); }
   .config-warning { background:rgba(239,68,68,0.1); border:1px solid var(--empty); color:var(--empty); padding:16px; border-radius:10px; margin-bottom:16px; font-size:13px; line-height:1.6; }
@@ -181,9 +180,7 @@
   .copy-preview-table tr:last-child td { border-bottom:none; }
   .copy-preview-empty { text-align:center; color:var(--text-faint); padding:20px; font-size:13px; }
 
-  /* =============================================
-     ★ 코치 색상 0~11 (12명 확장)
-     ============================================= */
+  /* 코치 색상 0~11 (12명) */
   .coach-color-0  { --cc:#ef4444; --cc-bg:rgba(239,68,68,0.15);   --cc-border:rgba(239,68,68,0.5); }
   .coach-color-1  { --cc:#f97316; --cc-bg:rgba(249,115,22,0.15);  --cc-border:rgba(249,115,22,0.5); }
   .coach-color-2  { --cc:#facc15; --cc-bg:rgba(250,204,21,0.15);  --cc-border:rgba(250,204,21,0.5); }
@@ -314,7 +311,7 @@
     </div>
   </div>
 </div>
-<!-- ★ 코치 이름 편집 모달 — 12명 -->
+<!-- 코치 이름 편집 모달 — 12명 -->
 <div class="modal-backdrop" id="coachModal">
   <div class="modal">
     <h3>담당자 이름 설정</h3>
@@ -342,7 +339,12 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const APPS_SCRIPT_URL = 'AKfycbxwsCnNwsdJKJnjuEeoU-3ijzD-vPTaykfkQiaA_Kx-7F_5N1WE84o5cx9uwaMRD-uT_A';
+/* =========================================================================
+   ⚙️ Apps Script 웹앱 URL — 본인 URL로 교체하세요!
+   ========================================================================= */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHC3QU_GXunIPChpsGjarXFN0rbsKsd0Dq6riUhdyfiBK0OQIDlfAgLCdOhY4FVEUlVg/exec';
+
+const COACH_COUNT = 12;
 
 const ROLE_GROUPS = [
   { name:'선수반 셔틀 (등원)', group:'shuttle-player', roles:[
@@ -376,11 +378,7 @@ const ROLE_GROUPS = [
 
 const ROLES = ROLE_GROUPS.flatMap(g => g.roles.map(r => ({ ...r, group: g.group })));
 
-/* ★ 12명으로 확장 */
-const DEFAULT_COACHES = [
-  '담당자1','담당자2','담당자3','담당자4','담당자5','담당자6',
-  '담당자7','담당자8','담당자9','담당자10','담당자11','담당자12'
-];
+const DEFAULT_COACHES = Array.from({length: COACH_COUNT}, (_, i) => `담당자${i+1}`);
 const WEEKDAY_HEADERS = ['월','화','수','목','금','토','일'];
 
 const _today = new Date();
@@ -457,10 +455,9 @@ async function loadData() {
   setSyncStatus('syncing','동기화 중...');
   try {
     const data=await apiGet(); assignments=data.assignments||{};
-    /* ★ 12명으로 체크 */
     if(Array.isArray(data.coaches)&&data.coaches.length>0){
-      const loaded=data.coaches.slice(0,12);
-      while(loaded.length<12) loaded.push(`담당자${loaded.length+1}`);
+      const loaded=data.coaches.slice(0,COACH_COUNT);
+      while(loaded.length<COACH_COUNT) loaded.push(`담당자${loaded.length+1}`);
       coaches=loaded;
     }
     setSyncStatus('connected','연결됨'); return true;
@@ -484,8 +481,7 @@ function detectCurrentWeek() {
   for(let i=0;i<WEEKS.length;i++){if(WEEKS[i].includes(day))return i;} return 0;
 }
 
-/* ★ 색상 인덱스 0~11 (12명) */
-function getCoachColorIdx(name) { const i=coaches.indexOf(name); return i>=0?i%12:-1; }
+function getCoachColorIdx(name) { const i=coaches.indexOf(name); return i>=0?i%COACH_COUNT:-1; }
 function coachColorClass(name) { const i=getCoachColorIdx(name); return i>=0?`colored coach-color-${i}`:''; }
 
 function showConfigWarning() {
@@ -558,11 +554,10 @@ function updateStats() {
 
 function renderAll() { renderCoachList(); renderWeekTabs(); renderSchedule(); checkNewMonthBanner(); renderLegend(); }
 
-/* ★ renderLegend — idx % 12 */
 function renderLegend() {
   const legend=document.getElementById('legend');
   const dots=coaches.map((name,idx)=>
-    `<span class="legend-item coach-color-${idx%12} colored"><span class="legend-coach-dot"></span><span style="color:var(--cc);font-size:12px;">${escapeHtml(name)}</span></span>`
+    `<span class="legend-item coach-color-${idx%COACH_COUNT} colored"><span class="legend-coach-dot"></span><span style="color:var(--cc);font-size:12px;">${escapeHtml(name)}</span></span>`
   ).join('');
   legend.innerHTML=`<span class="legend-item"><span class="legend-dot empty"></span>비어있음</span>${dots}
     <span class="legend-item" style="margin-left:auto;color:var(--text-faint);font-size:11px;">배정된 칸을 다시 탭하면 수정/삭제</span>`;
@@ -701,7 +696,6 @@ async function confirmCopyPrev() {
   else{setSyncStatus('error',`${fail}건 실패`);showToast(`${fail}건 저장 실패`,true);}
 }
 
-/* ★ openCoachEditor — 12명 루프 */
 function openCoachEditor() {
   document.getElementById('coachEditorList').innerHTML=coaches.map((name,i)=>`
     <div class="coach-editor-row">
@@ -712,14 +706,13 @@ function openCoachEditor() {
 }
 function closeCoachEditor() { document.getElementById('coachModal').classList.remove('open'); }
 
-/* ★ saveCoachNames — 12명 루프 + size !== 12 */
 async function saveCoachNames() {
   const newCoaches=[];
-  for(let i=0;i<12;i++){
+  for(let i=0;i<COACH_COUNT;i++){
     const v=document.getElementById(`coachInput${i}`).value.trim()||`담당자${i+1}`;
     newCoaches.push(v);
   }
-  if(new Set(newCoaches).size!==12){showToast('이름이 중복됩니다. 다르게 입력해주세요.',true);return;}
+  if(new Set(newCoaches).size!==COACH_COUNT){showToast('이름이 중복됩니다. 다르게 입력해주세요.',true);return;}
   const btn=document.getElementById('saveCoachesBtn'); btn.textContent='저장 중...'; btn.disabled=true;
   setSyncStatus('syncing','저장 중...');
   try {
@@ -762,15 +755,14 @@ document.getElementById('resetModal').addEventListener('click',e=>{if(e.target.i
 document.getElementById('multiAssignModal').addEventListener('click',e=>{if(e.target.id==='multiAssignModal')closeMultiAssignModal();});
 document.getElementById('copyPrevModal').addEventListener('click',e=>{if(e.target.id==='copyPrevModal')closeCopyPrevModal();});
 
-/* ★ refresh — coaches.length === 12 */
 async function refresh() {
   if(pendingKeys.size>0)return;
   try {
     const data=await apiGet(), na=data.assignments||{};
     let nc=coaches;
     if(Array.isArray(data.coaches)&&data.coaches.length>0){
-      const loaded=data.coaches.slice(0,12);
-      while(loaded.length<12) loaded.push(`담당자${loaded.length+1}`);
+      const loaded=data.coaches.slice(0,COACH_COUNT);
+      while(loaded.length<COACH_COUNT) loaded.push(`담당자${loaded.length+1}`);
       nc=loaded;
     }
     if(JSON.stringify(na)!==JSON.stringify(assignments)||JSON.stringify(nc)!==JSON.stringify(coaches)){assignments=na;coaches=nc;renderAll();}
