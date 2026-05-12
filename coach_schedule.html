@@ -131,6 +131,7 @@
   .role-label.group-shuttle-hobby { border-left:3px solid #8b5cf6; }
   .role-label.group-coach-hobby { border-left:3px solid #f59e0b; }
   .role-label.group-shuttle-return { border-left:3px solid #ec4899; }
+  .role-label.group-game-escort { border-left:3px solid #06b6d4; }
   tr.group-divider td { background:#0c0c0c; border:none; height:8px; padding:0; }
   tr.group-header td { background:#0f0f0f; color:var(--text-faint); font-size:10px; text-transform:uppercase; letter-spacing:0.15em; font-weight:700; padding:6px 16px; height:auto; border-bottom:1px solid var(--border); }
   .slot { width:100%; height:100%; min-height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--empty-bg); font-size:11px; font-weight:600; transition:all 0.12s ease; text-align:center; padding:2px; overflow:hidden; word-break:keep-all; }
@@ -357,7 +358,7 @@
 /* =========================================================================
    ⚙️ Apps Script 웹앱 URL — 본인 URL로 교체하세요!
    ========================================================================= */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzqnxda_nJtGXxU98hFpYXcQmYaNYucGTHzK-q_UI1Moo-9QtI2uElyhwfjAQWW2y5OZg/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxniNV5oM3P1cTkbl3qrqVznkmrkp-JxcAgF3LOaMj-eNDeubTrbeKQftyK2lQEy_eerg/exec';
 
 const COACH_COUNT = 12;
 
@@ -383,11 +384,18 @@ const ROLE_GROUPS = [
   { name:'취미반 코치', group:'coach-hobby', roles:[
     { id:'chwimi_coach_1', label:'취미반 코치1', short:'취미1' },
     { id:'chwimi_coach_2', label:'취미반 코치2', short:'취미2' },
+    { id:'chwimi_coach_3', label:'취미반 코치3', short:'취미3' },
   ]},
   { name:'취미반 셔틀 (하원)', group:'shuttle-return', roles:[
     { id:'shuttle_pangyo_hobby_out', label:'판교 취미 셔틀 하원', short:'판교취미↓' },
     { id:'shuttle_jeongja_hobby_out', label:'정자 취미 셔틀 하원', short:'정자취미↓' },
     { id:'shuttle_yatap_hobby_out', label:'야탑 취미 셔틀 하원', short:'야탑취미↓' },
+  ]},
+  { name:'경기/대회 인솔', group:'game-escort', roles:[
+    { id:'game_a_escort_1', label:'경기 A 인솔1', short:'경기A1' },
+    { id:'game_a_escort_2', label:'경기 A 인솔2', short:'경기A2' },
+    { id:'game_b_escort_1', label:'경기 B 인솔1', short:'경기B1' },
+    { id:'game_b_escort_2', label:'경기 B 인솔2', short:'경기B2' },
   ]},
 ];
 
