@@ -2184,36 +2184,34 @@
         cancelMultiSelect();
         renderAll();
         setSyncStatus('syncing', '저장 중...');
-        let fail = 0;
-        for (const k of keys) {
-            const ui = k.indexOf('_'),
-                day = Number(k.substring(0, ui)),
-                roleId = k.substring(ui + 1);
-            try {
-                await apiPost({
-                    action: 'assign',
-                    day,
-                    roleId,
-                    coachName
-                });
-                pendingKeys.delete(k);
-            }
-            catch (e) {
-                fail++;
-                assignments[k] = pv[k] || '';
-                if (!assignments[k])
-                    delete assignments[k];
-                pendingKeys.delete(k);
-            }
-        }
-        renderAll();
-        if (!fail) {
+        const changes = keys.map(k => {
+            const ui = k.indexOf('_');
+            return {
+                day: Number(k.substring(0, ui)),
+                roleId: k.substring(ui + 1),
+                coachName: coachName
+            };
+        });
+        try {
+            await apiPost({
+                action: 'batchAssign',
+                changes: changes
+            });
+            keys.forEach(k => pendingKeys.delete(k));
+            renderAll();
             setSyncStatus('connected', '저장됨');
             showToast(`${coachName} ${keys.length}건 일괄 배정 완료`);
-        }
-        else {
-            setSyncStatus('error', `${fail}건 저장 실패`);
-            showToast(`${fail}건 저장 실패`, true);
+        } catch (e) {
+            keys.forEach(k => {
+                if (pv[k])
+                    assignments[k] = pv[k];
+                else
+                    delete assignments[k];
+                pendingKeys.delete(k);
+            });
+            renderAll();
+            setSyncStatus('error', '저장 실패');
+            showToast('저장 실패. 인터넷 연결을 확인하세요.', true);
         }
     }
 
@@ -2312,33 +2310,32 @@
         closeCopyPrevModal();
         renderAll();
         setSyncStatus('syncing', '저장 중...');
-        let fail = 0;
-        for (const {day, roleId, coachName} of preview) {
-            try {
-                await apiPost({
-                    action: 'assign',
-                    day,
-                    roleId,
-                    coachName
-                });
-                pendingKeys.delete(`${day}_${roleId}`);
-            }
-            catch (e) {
-                fail++;
-                delete assignments[`${day}_${roleId}`];
-                pendingKeys.delete(`${day}_${roleId}`);
-            }
-        }
-        renderAll();
-        btn.textContent = '이대로 적용';
-        btn.disabled = false;
-        if (!fail) {
+        const changes = preview.map(({day, roleId, coachName}) => ({
+            day,
+            roleId,
+            coachName
+        }));
+        try {
+            await apiPost({
+                action: 'batchAssign',
+                changes: changes
+            });
+            preview.forEach(({day, roleId}) => pendingKeys.delete(`${day}_${roleId}`));
+            renderAll();
+            btn.textContent = '이대로 적용';
+            btn.disabled = false;
             setSyncStatus('connected', '저장됨');
             showToast(`${preview.length}건 복사 완료`);
-        }
-        else {
-            setSyncStatus('error', `${fail}건 실패`);
-            showToast(`${fail}건 저장 실패`, true);
+        } catch (e) {
+            preview.forEach(({day, roleId}) => {
+                delete assignments[`${day}_${roleId}`];
+                pendingKeys.delete(`${day}_${roleId}`);
+            });
+            renderAll();
+            btn.textContent = '이대로 적용';
+            btn.disabled = false;
+            setSyncStatus('error', '저장 실패');
+            showToast('저장 실패. 인터넷 연결을 확인하세요.', true);
         }
     }
 
