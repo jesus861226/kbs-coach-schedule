@@ -365,6 +365,58 @@
         color: var(--accent);
     }
 
+    /* ===== 선수반/취미반 탭 스타일 ===== */
+    .section-tabs {
+        display: flex;
+        gap: 8px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 4px;
+        margin-bottom: 16px;
+    }
+
+    .section-tab {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: var(--text-dim);
+        padding: 10px 16px;
+        border-radius: 7px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        white-space: nowrap;
+    }
+
+    .section-tab:hover {
+        color: var(--text);
+    }
+
+    .section-tab.active {
+        background: var(--surface-3);
+        color: var(--text);
+        box-shadow: inset 0 0 0 1px var(--border-light);
+    }
+
+    .section-tab .tab-label {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 16px;
+        letter-spacing: 0.03em;
+    }
+
+    .section-tab .tab-count {
+        font-size: 11px;
+        opacity: 0.7;
+        font-weight: 500;
+    }
+
     .week-nav {
         display: flex;
         gap: 0;
@@ -1173,8 +1225,9 @@
         color: var(--text-faint);
         padding: 20px;
         font-size: 13px;
-    }/* 코치 색상 0~11 (12명) */
+    }
 
+    /* 코치 색상 0~11 (12명) */
     .coach-color-0 {
         --cc: #ef4444;
         --cc-bg: rgba(239, 68, 68, 0.15);
@@ -1332,6 +1385,15 @@
             padding: 6px 10px;
         }
 
+        .section-tab {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        .section-tab .tab-label {
+            font-size: 14px;
+        }
+
         thead.date-header th.role-col {
             width: 90px;
             min-width: 90px;
@@ -1444,6 +1506,19 @@
             <button class="multi-cancel-btn" id="multiCancelBtn" onclick="cancelMultiSelect()">선택 취소</button>
             <button class="copy-prev-btn" onclick="openCopyPrevModal()">↩ 이전 달에서 복사</button>
         </div>
+
+        <!-- 선수반 / 취미반 탭 추가 -->
+        <div class="section-tabs" id="sectionTabs">
+            <button class="section-tab active" onclick="setSectionTab('player')">
+                <span class="tab-label">선수반</span>
+                <span class="tab-count" id="playerCount">(—)</span>
+            </button>
+            <button class="section-tab" onclick="setSectionTab('hobby')">
+                <span class="tab-label">취미반</span>
+                <span class="tab-count" id="hobbyCount">(—)</span>
+            </button>
+        </div>
+
         <div class="week-nav" id="weekNav"></div>
         <div class="legend" id="legend">
             <span class="legend-item">
@@ -1538,6 +1613,7 @@
     {
         name: '선수반 셔틀 (등원)',
         group: 'shuttle-player',
+        section: 'player',
         roles: [
         {
             id: 'shuttle_pangyo_player_in',
@@ -1564,6 +1640,7 @@
     {
         name: '선수반 코치',
         group: 'coach-player',
+        section: 'player',
         roles: [
         {
             id: 'yukseong_coach_1',
@@ -1595,6 +1672,7 @@
     {
         name: '경기/대회 인솔',
         group: 'game-escort',
+        section: 'player',
         roles: [
         {
             id: 'game_a_escort_1',
@@ -1621,6 +1699,7 @@
     {
         name: '취미반 셔틀 (등원)',
         group: 'shuttle-hobby',
+        section: 'hobby',
         roles: [
         {
             id: 'shuttle_pangyo_hobby_in',
@@ -1642,6 +1721,7 @@
     {
         name: '취미반 코치',
         group: 'coach-hobby',
+        section: 'hobby',
         roles: [
         {
             id: 'chwimi_coach_1',
@@ -1663,6 +1743,7 @@
     {
         name: '취미반 셔틀 (하원)',
         group: 'shuttle-return',
+        section: 'hobby',
         roles: [
         {
             id: 'shuttle_pangyo_hobby_out',
@@ -1685,7 +1766,8 @@
 
     const ROLES = ROLE_GROUPS.flatMap(g => g.roles.map(r => ({
         ...r,
-        group: g.group
+        group: g.group,
+        section: g.section
     })));
 
     const DEFAULT_COACHES = Array.from({
@@ -1707,6 +1789,8 @@
         isMultiSelectMode = false,
         multiSelectedKeys = new Set(),
         prevMonthAssignments = {};
+    let activeSection = 'player'; // 활성 섹션
+    
     const STORAGE_KEY_ME = 'kbs_my_coach_name';
 
     function buildWeeks(year, month) {
@@ -1760,6 +1844,40 @@
     function isCurrentMonth() {
         const n = new Date();
         return YEAR === n.getFullYear() && MONTH === n.getMonth() + 1;
+    }
+
+    // 섹션 탭 변경
+    function setSectionTab(section) {
+        activeSection = section;
+        document.querySelectorAll('.section-tab').forEach((tab, idx) => {
+            tab.classList.toggle('active', (idx === 0 && section === 'player') || (idx === 1 && section === 'hobby'));
+        });
+        renderSchedule();
+        updateSectionCounts();
+    }
+
+    // 섹션별 항목 개수 업데이트
+    function updateSectionCounts() {
+        const playerRoles = ROLES.filter(r => r.section === 'player').length;
+        const hobbyRoles = ROLES.filter(r => r.section === 'hobby').length;
+        
+        let playerFilled = 0, hobbyFilled = 0;
+        const totalDays = new Date(YEAR, MONTH, 0).getDate();
+        
+        for (let d = 1; d <= totalDays; d++) {
+            ROLES.forEach(r => {
+                if (assignments[`${d}_${r.id}`]) {
+                    if (r.section === 'player') playerFilled++;
+                    else if (r.section === 'hobby') hobbyFilled++;
+                }
+            });
+        }
+        
+        const playerEmpty = playerRoles * totalDays - playerFilled;
+        const hobbyEmpty = hobbyRoles * totalDays - hobbyFilled;
+        
+        document.getElementById('playerCount').textContent = `(${playerFilled}/${playerRoles * totalDays})`;
+        document.getElementById('hobbyCount').textContent = `(${hobbyFilled}/${hobbyRoles * totalDays})`;
     }
 
     async function initMonth() {
@@ -1870,7 +1988,7 @@
         week.forEach(d => {
             if (d === null)
                 return;
-            ROLES.forEach(r => {
+            ROLES.filter(r => r.section === activeSection).forEach(r => {
                 if (!assignments[`${d}_${r.id}`])
                     empty++;
             });
@@ -1881,7 +1999,7 @@
         if (d === null || d === undefined)
             return 0;
         let empty = 0;
-        ROLES.forEach(r => {
+        ROLES.filter(r => r.section === activeSection).forEach(r => {
             if (!assignments[`${d}_${r.id}`])
                 empty++;
         });
@@ -1951,6 +2069,11 @@
             week = WEEKS[activeWeekIdx];
         const todayDate = isCurrentMonth() ? new Date().getDate() : -1,
             ec = getWeekEmptyCount(activeWeekIdx);
+        
+        // 현재 섹션의 역할 그룹만 필터링
+        const sectionGroups = ROLE_GROUPS.filter(g => g.section === activeSection);
+        const sectionRoles = ROLES.filter(r => r.section === activeSection);
+        
         let html = `<div class="week-info-bar"><div><div class="week-info-title">WEEK ${activeWeekIdx + 1}</div><div class="week-info-sub">${getWeekRange(activeWeekIdx)}</div></div>
     <div class="week-empty-badge ${ec === 0 ? 'zero' : ''}">${ec === 0 ? '✓ 모든 자리 배정 완료' : `미배정 ${ec}`}</div></div>`;
         html += '<div class="table-scroll"><table><thead class="date-header"><tr><th class="role-col">역할 / ROLE</th>';
@@ -1971,7 +2094,7 @@
             html += `<th class="${classes.join(' ')}"><div class="date-weekday">${WEEKDAY_HEADERS[di]}</div><div class="date-num">${d ? `${MONTH}/${d}` : '—'}</div></th>`;
         });
         html += '</tr></thead><tbody>';
-        ROLE_GROUPS.forEach((g, gi) => {
+        sectionGroups.forEach((g, gi) => {
             if (gi > 0)
                 html += '<tr class="group-divider"><td colspan="8"></td></tr>';
             html += `<tr class="group-header"><td colspan="8">${g.name}</td></tr>`;
@@ -2005,8 +2128,18 @@
     }
 
     function updateStats() {
-        const total = new Date(YEAR, MONTH, 0).getDate() * ROLES.length;
-        const filled = Object.keys(assignments).filter(k => assignments[k]).length;
+        const sectionRoles = ROLES.filter(r => r.section === activeSection).length;
+        const totalDays = new Date(YEAR, MONTH, 0).getDate();
+        const total = totalDays * sectionRoles;
+        
+        let filled = 0;
+        for (let d = 1; d <= totalDays; d++) {
+            ROLES.filter(r => r.section === activeSection).forEach(r => {
+                if (assignments[`${d}_${r.id}`])
+                    filled++;
+            });
+        }
+        
         document.getElementById('statFilled').textContent = filled;
         document.getElementById('statEmpty').textContent = total - filled;
     }
@@ -2017,6 +2150,7 @@
         renderSchedule();
         checkNewMonthBanner();
         renderLegend();
+        updateSectionCounts();
     }
 
     function renderLegend() {
@@ -2342,8 +2476,7 @@
     function openCoachEditor() {
         document.getElementById('coachEditorList').innerHTML = coaches.map((name, i) => `
     <div class="coach-editor-row">
-      <label>담당자${
-        i + 1}</label>
+      <label>담당자${i + 1}</label>
       <input type="text" id="coachInput${i}" value="${escapeAttr(name)}" maxlength="10" placeholder="이름 입력">
     </div>`
         ).join('');
