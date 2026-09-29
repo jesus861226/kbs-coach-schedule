@@ -1507,18 +1507,6 @@
             <button class="copy-prev-btn" onclick="openCopyPrevModal()">↩ 이전 달에서 복사</button>
         </div>
 
-        <!-- 선수반 / 취미반 탭 추가 -->
-        <div class="section-tabs" id="sectionTabs">
-            <button class="section-tab active" onclick="setSectionTab('player')">
-                <span class="tab-label">선수반</span>
-                <span class="tab-count" id="playerCount">(—)</span>
-            </button>
-            <button class="section-tab" onclick="setSectionTab('hobby')">
-                <span class="tab-label">취미반</span>
-                <span class="tab-count" id="hobbyCount">(—)</span>
-            </button>
-        </div>
-
         <div class="week-nav" id="weekNav"></div>
         <div class="legend" id="legend">
             <span class="legend-item">
@@ -1876,8 +1864,9 @@
         const playerEmpty = playerRoles * totalDays - playerFilled;
         const hobbyEmpty = hobbyRoles * totalDays - hobbyFilled;
         
-        document.getElementById('playerCount').textContent = `(${playerFilled}/${playerRoles * totalDays})`;
-        document.getElementById('hobbyCount').textContent = `(${hobbyFilled}/${hobbyRoles * totalDays})`;
+        const pc = document.getElementById('playerCount'), hc = document.getElementById('hobbyCount');
+        if (pc) pc.textContent = `(${playerFilled}/${playerRoles * totalDays})`;
+        if (hc) hc.textContent = `(${hobbyFilled}/${hobbyRoles * totalDays})`;
     }
 
     async function initMonth() {
@@ -1988,7 +1977,7 @@
         week.forEach(d => {
             if (d === null)
                 return;
-            ROLES.filter(r => r.section === activeSection).forEach(r => {
+            ROLES.forEach(r => {
                 if (!assignments[`${d}_${r.id}`])
                     empty++;
             });
@@ -1999,7 +1988,7 @@
         if (d === null || d === undefined)
             return 0;
         let empty = 0;
-        ROLES.filter(r => r.section === activeSection).forEach(r => {
+        ROLES.forEach(r => {
             if (!assignments[`${d}_${r.id}`])
                 empty++;
         });
@@ -2070,9 +2059,9 @@
         const todayDate = isCurrentMonth() ? new Date().getDate() : -1,
             ec = getWeekEmptyCount(activeWeekIdx);
         
-        // 현재 섹션의 역할 그룹만 필터링
-        const sectionGroups = ROLE_GROUPS.filter(g => g.section === activeSection);
-        const sectionRoles = ROLES.filter(r => r.section === activeSection);
+        // 선수반 → 취미반 순서로 전체 표시
+        const sectionGroups = [...ROLE_GROUPS.filter(g => g.section === 'player'), ...ROLE_GROUPS.filter(g => g.section !== 'player')];
+        const sectionRoles = ROLES;
         
         let html = `<div class="week-info-bar"><div><div class="week-info-title">WEEK ${activeWeekIdx + 1}</div><div class="week-info-sub">${getWeekRange(activeWeekIdx)}</div></div>
     <div class="week-empty-badge ${ec === 0 ? 'zero' : ''}">${ec === 0 ? '✓ 모든 자리 배정 완료' : `미배정 ${ec}`}</div></div>`;
@@ -2128,13 +2117,13 @@
     }
 
     function updateStats() {
-        const sectionRoles = ROLES.filter(r => r.section === activeSection).length;
+        const sectionRoles = ROLES.length;
         const totalDays = new Date(YEAR, MONTH, 0).getDate();
         const total = totalDays * sectionRoles;
         
         let filled = 0;
         for (let d = 1; d <= totalDays; d++) {
-            ROLES.filter(r => r.section === activeSection).forEach(r => {
+            ROLES.forEach(r => {
                 if (assignments[`${d}_${r.id}`])
                     filled++;
             });
